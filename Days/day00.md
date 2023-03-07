@@ -85,6 +85,6 @@ Siguiente con el esquema anterior, al momento de mantener una aplicación, es po
 
 Siguiendo el mismo esquema de mantener una aplicación con alta disponibilidad, se lleva a cabo un sistema de contenedores, que encapsula un conjunto de componentes virtualizados, sin ser una máquina virtual, sin ser un servidor físico, más bien, montado sobre un servidor físico, porque a fin de cuenta, todo tiene que correr sobre hardware. Entre las ventajas que podemos encontrar de utilizar contenedores, es la velocidad con la que puedes levantar entornos, tanto así que puedes gestionar contenedores utilizando pocos recursos, aplicar mayor distribución y dividir los componentes en pequeños servicios. 
 
-# Fuentes y fuentes
+# Fuentes
 
 Pueden encontrar mayor información en su página oficial: https://kubernetes.io/docs/concepts/overview/
