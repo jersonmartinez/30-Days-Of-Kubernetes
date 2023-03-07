@@ -5,6 +5,8 @@
   - [Componente de control de recursos](#componente-de-control-de-recursos)
     - [Componente de Planificación](#componente-de-planificación)
     - [Componente de Red](#componente-de-red)
+    - [Agente de Kubernetes](#agente-de-kubernetes)
+    - [Almacén de datos distribuído](#almacén-de-datos-distribuído)
   - [De servidores físicos a contenedores](#de-servidores-físicos-a-contenedores)
     - [Despliegue tradicional](#despliegue-tradicional)
     - [Despliegue virtualizado](#despliegue-virtualizado)
@@ -34,6 +36,8 @@ Kubernetes consta de varios componentes que trabajan juntos para proporcionar un
 - Componente de control de recursos (`kube-controller-manager`)
 - Componente de Planificación (`kube-scheduler`)
 - Componente de Red (`kube-proxy`)
+- Agente de Kubernetes (`kubelet`)
+- Almacén de datos distribuído (`etcd`)
 
 ### Componente de Orquestación
 
@@ -50,6 +54,16 @@ Kubernetes consta de varios componentes que trabajan juntos para proporcionar un
 ### Componente de Red
 
 **kube-proxy**: Es el componente que gestiona el tráfico de red del clúster y se encarga de la configuración de la red para los servicios.
+
+### Agente de Kubernetes
+
+**kubelet**: Es el agente que se ejecuta en cada nodo del clúster y se comunica con el componente principal de Kubernetes para asegurar que los contenedores se estén ejecutando correctamente en el nodo.
+
+### Almacén de datos distribuído
+
+**etcd**: Es un almacén de datos distribuido y coherente que se utiliza para almacenar el estado del clúster de Kubernetes.
+
+Además de estos componentes principales, hay otros componentes opcionales que se pueden utilizar según las necesidades, como los componentes de monitoreo, los sistemas de almacenamiento en la nube y los sistemas de gestión de logs. En conjunto, estos componentes permiten a Kubernetes gestionar y orquestar los contenedores de manera eficiente y escalable.
 
 ## De servidores físicos a contenedores
 
