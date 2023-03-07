@@ -1,3 +1,3 @@
 # 30-Days-Of-Kubernetes
-This a repository about Kubernetes documentation
 
+Este repositorio es usado como documentación del conocimiento que vaya adquiriendo sobre orquestador de contenedores Kubernetes.
