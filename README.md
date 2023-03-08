@@ -8,6 +8,8 @@ Estaremos siguiendo la siguiente [ruta de aprendizaje de Kubernetes](https://roa
 
 ## Introducción
 
+Para utilizar Kubernetes, es necesario aprender los conceptos básicos de la plataforma y cómo se utilizan los objetos de Kubernetes (como pods, servicios y replicaset) para definir y gestionar aplicaciones en contenedores. También se requiere conocimiento de los comandos y herramientas de Kubernetes para interactuar con los clústeres de Kubernetes y administrar los objetos de Kubernetes.
+
 [✔️] ♾️ 0 > [Vista general de Kubernetes](https://github.com/jersonmartinez/30-Days-Of-Kubernetes/blob/main/Days/day00.md)
 
 [🔒] ♾️ 1 > [¿Por qué Kubernetes?](https://github.com/jersonmartinez/30-Days-Of-Kubernetes/blob/main/Days/day01.md)

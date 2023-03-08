@@ -1,4 +1,7 @@
-- [Introducción](#introducción)
+- [Introducción a Kubernetes](#introducción-a-kubernetes)
+  - [Concepto](#concepto)
+  - [Contenedores](#contenedores)
+    - [Características de los contenedores](#características-de-los-contenedores)
   - [Kubernetes y k8s](#kubernetes-y-k8s)
   - [Componentes de Kubernetes](#componentes-de-kubernetes)
     - [Componente de Orquestación](#componente-de-orquestación)
@@ -11,16 +14,74 @@
     - [Despliegue tradicional](#despliegue-tradicional)
     - [Despliegue virtualizado](#despliegue-virtualizado)
     - [Despliegue en contenedores](#despliegue-en-contenedores)
-- [Fuentes y fuentes](#fuentes-y-fuentes)
+  - [¿Por qué deberías usar Kubernetes?](#por-qué-deberías-usar-kubernetes)
+    - [Características de Kubernetes](#características-de-kubernetes)
+  - [Conceptos y terminologías alrededor de Kubernetes](#conceptos-y-terminologías-alrededor-de-kubernetes)
+  - [Alternativas a Kubernetes](#alternativas-a-kubernetes)
+- [Fuentes](#fuentes)
 
+# Introducción a Kubernetes
 
-# Introducción
+## Concepto
 
 Kubernetes es una plataforma de orquestación de contenedores de código abierto que automatiza la implementación, el escalado y la gestión de aplicaciones en contenedores. Fue desarrollado por Google y lanzado en 2014 como un proyecto de código abierto.
 
 Kubernetes ofrece una manera eficiente de gestionar contenedores en grandes clústeres, permitiendo a los desarrolladores desplegar y gestionar aplicaciones en cualquier infraestructura de forma consistente. Con Kubernetes, los desarrolladores pueden definir cómo se deben ejecutar las aplicaciones en contenedores y Kubernetes se encarga de asignar recursos, escalar automáticamente y gestionar la disponibilidad de las aplicaciones.
 
 Kubernetes se basa en una arquitectura cliente-servidor y consta de varios componentes, como el componente de orquestación (`kube-apiserver`), el componente de planificación (`kube-scheduler`), el componente de control de recursos (`kube-controller-manager`) y el componente de red (`kube-proxy`). Además, Kubernetes cuenta con una API que permite a los usuarios interactuar con los diferentes componentes de Kubernetes para gestionar aplicaciones en contenedores.
+
+## Contenedores
+
+Los contenedores son una tecnología de virtualización que permite que las aplicaciones se ejecuten en un entorno aislado y portátil. Un contenedor es una unidad de software que contiene todo lo necesario para que una aplicación se ejecute, incluyendo el código, las bibliotecas y las dependencias. Los contenedores se pueden crear a partir de una imagen de contenedor, que es una plantilla que contiene todo lo necesario para crear un contenedor.
+
+A diferencia de la virtualización tradicional, donde cada máquina virtual tiene su propio sistema operativo completo, los contenedores comparten el mismo sistema operativo del host, lo que los hace más livianos y rápidos de crear y de mover. Los contenedores también ofrecen una mayor flexibilidad y portabilidad que la virtualización tradicional, lo que los hace ideales para el desarrollo de aplicaciones y la implementación en entornos de producción.
+
+Los contenedores son ampliamente utilizados en la actualidad, y son una tecnología clave para la implementación de aplicaciones en la nube y la automatización de la entrega de software. Algunas de las plataformas de contenedores más populares incluyen Docker y Kubernetes.
+
+### Características de los contenedores
+
+A continuación se presentan algunas de las características más destacadas de los contenedores:
+
+- **Portabilidad:** Los contenedores son altamente portátiles y se pueden mover fácilmente entre diferentes entornos de nube, sistemas operativos y plataformas de hardware.
+
+- **Aislamiento:** Los contenedores ofrecen un alto nivel de aislamiento de recursos, lo que significa que pueden ejecutarse múltiples aplicaciones en un mismo host sin interferir entre sí.
+
+- **Ligereza:** Los contenedores son ligeros y rápidos de crear y destruir, lo que los hace ideales para la implementación de aplicaciones en la nube y la automatización de la entrega de software.
+
+- **Compartición de recursos:** Los contenedores comparten recursos con el sistema operativo del host y otros contenedores, lo que resulta en un uso más eficiente de los recursos y una mayor capacidad de escalado.
+
+- **Escalabilidad:** Los contenedores pueden escalar horizontalmente de manera fácil y rápida, lo que permite agregar más recursos para manejar una carga de trabajo creciente.
+
+- **Facilidad de gestión:** Los contenedores son fáciles de gestionar y actualizar, lo que reduce el tiempo de inactividad y los costos de mantenimiento.
+
+- **Automatización:** Los contenedores se pueden integrar fácilmente con herramientas de automatización, como Kubernetes, para orquestar y administrar de manera eficiente los contenedores en múltiples hosts.
+
+
+|   Características   |  Servidor físico  |  Máquina virtual  |  Contenedor  |
+|---------------------|-------------------|-------------------|--------------|
+| Virtualización      | No                | Sí                | Sí           |
+| Sistema operativo   | Uno               | Varias            | Compartido   |
+| Recursos            | Dedicados         | Asignados         | Compartidos  |
+| Aislamiento         | Limitado          | Bueno             | Excelente    |
+| Portabilidad        | No                | Sí                | Sí           |
+| Tiempo de inicio    | Minutos           | Minutos           | Segundos     |
+| Sobrecarga          | Baja              | Alta              | Baja         |
+| Escalabilidad       | Limitada          | Buena             | Excelente    |
+| Reducción de costes | No                | Sí                | Sí           
+
+
+| Característica | Servidor físico | Máquina virtual | Contenedor |
+|----------------|----------------|----------------|------------|
+| Tecnología de virtualización | No está virtualizado | Virtualización completa | Virtualización a nivel de sistema operativo |
+| Aislamiento | No hay aislamiento | Aislamiento completo | Aislamiento parcial |
+| Sistema operativo | Se ejecuta directamente en el hardware | Se ejecuta en una capa de abstracción en la máquina virtual | Se ejecuta en el sistema operativo del host |
+| Recursos | Recursos dedicados del hardware | Recursos compartidos con el host y otras máquinas virtuales | Recursos compartidos con el host y otros contenedores |
+| Tamaño | Grande y pesado | Grande y pesado debido a la necesidad de un sistema operativo completo | Pequeño y ligero debido al uso compartido del sistema operativo |
+| Creación | Requiere configuración y mantenimiento manual | Puede ser creado y clonado fácilmente | Puede ser creado y eliminado rápidamente |
+| Portabilidad | No es portátil y no se puede mover fácilmente | Portátil y se puede mover a través de diferentes hosts y nubes | Portátil y se puede mover a través de diferentes hosts y nubes |
+| Rendimiento | Alto rendimiento debido al acceso directo al hardware | Rendimiento moderado debido a la capa de virtualización adicional | Alto rendimiento debido a la falta de una capa de virtualización adicional |
+| Reducción de costes | Mayor costo debido a la necesidad de comprar y mantener hardware dedicado | Reducción de costes debido al uso compartido de hardware y la consolidación de múltiples máquinas virtuales en un solo host | Mayor reducción de costes debido al uso compartido de recursos y la eliminación de la necesidad de un sistema operativo completo |
+| Uso de recursos | Uso ineficiente de recursos debido a la necesidad de dedicar hardware a cada aplicación | Uso eficiente de recursos debido al uso compartido de hardware entre múltiples máquinas virtuales | Uso más eficiente de recursos debido al uso compartido de hardware y la eliminación de la necesidad de un sistema operativo completo |
 
 ## Kubernetes y k8s
 
@@ -85,6 +146,110 @@ Siguiente con el esquema anterior, al momento de mantener una aplicación, es po
 
 Siguiendo el mismo esquema de mantener una aplicación con alta disponibilidad, se lleva a cabo un sistema de contenedores, que encapsula un conjunto de componentes virtualizados, sin ser una máquina virtual, sin ser un servidor físico, más bien, montado sobre un servidor físico, porque a fin de cuenta, todo tiene que correr sobre hardware. Entre las ventajas que podemos encontrar de utilizar contenedores, es la velocidad con la que puedes levantar entornos, tanto así que puedes gestionar contenedores utilizando pocos recursos, aplicar mayor distribución y dividir los componentes en pequeños servicios. 
 
+## ¿Por qué deberías usar Kubernetes?
+
+Kubernetes es útil porque puede:
+
+- Simplificar la implementación y la gestión de aplicaciones en contenedores, lo que permite a los equipos de desarrollo y operaciones trabajar de manera más eficiente.
+- Proporcionar alta disponibilidad y escalabilidad a las aplicaciones, lo que significa que pueden manejar cargas de trabajo más grandes sin interrupciones.
+- Proporcionar una plataforma para implementar aplicaciones en múltiples nubes y entornos de infraestructura.
+
+### Características de Kubernetes
+
+Kubernetes es una plataforma de orquestación de contenedores altamente escalable y flexible, que ofrece una serie de características y beneficios únicos para los usuarios. Algunas de las principales características de Kubernetes son:
+
+- **Orquestación de contenedores:** Kubernetes permite a los usuarios automatizar y administrar aplicaciones en contenedores, lo que simplifica la implementación y la gestión de aplicaciones.
+- **Escalabilidad:** Kubernetes permite escalar aplicaciones en contenedores automáticamente, lo que permite manejar grandes cargas de trabajo sin interrupciones.
+- **Alta disponibilidad:** Kubernetes ofrece un alto nivel de disponibilidad, lo que significa que las aplicaciones pueden seguir funcionando incluso si algunos nodos fallan.
+- **Gestión de recursos:** Kubernetes permite a los usuarios gestionar eficazmente los recursos de la infraestructura, como el CPU, la memoria y el almacenamiento, lo que garantiza una utilización eficiente de los recursos.
+- **Despliegue automático:** Kubernetes permite a los usuarios implementar aplicaciones en contenedores automáticamente, lo que simplifica el proceso de implementación y reduce el tiempo de inactividad.
+- **Actualización y gestión de configuración:** Kubernetes permite a los usuarios actualizar y gestionar la configuración de las aplicaciones en tiempo real, lo que garantiza la consistencia de la configuración en todo el clúster.
+- **Portabilidad:** Kubernetes es una plataforma portátil, lo que significa que puede utilizarse en una amplia variedad de entornos, incluyendo múltiples nubes y sistemas operativos.
+- **Extensibilidad:** Kubernetes es altamente extensible, lo que permite a los usuarios personalizar la plataforma para satisfacer sus necesidades específicas.
+
+En resumen, Kubernetes es una plataforma de orquestación de contenedores altamente escalable y flexible que ofrece una amplia gama de características y beneficios únicos para los usuarios, lo que la convierte en una herramienta esencial para la gestión eficiente de aplicaciones en contenedores.
+
+## Conceptos y terminologías alrededor de Kubernetes
+
+Algunos de los conceptos y terminologías clave de Kubernetes incluyen:
+
+**Nodo (Node)**
+Un nodo es una máquina virtual o física en la que se ejecutan los contenedores de Kubernetes. Cada nodo es administrado por el sistema operativo y tiene una dirección IP única.
+
+**Clúster (Cluster)**
+Un clúster de Kubernetes es un conjunto de nodos que trabajan juntos para ejecutar aplicaciones. El clúster administra la planificación de la ejecución de contenedores y la escalabilidad de los recursos.
+
+**Pod**
+Un pod es la unidad básica de implementación en Kubernetes. Un pod es un grupo de uno o más contenedores que comparten el mismo espacio de red y almacenamiento. Los pods son programados en los nodos y pueden ser escalados horizontalmente según sea necesario.
+
+**Controlador (Controller)**
+Un controlador es un componente de Kubernetes que gestiona la replicación y escalabilidad de los pods. Los controladores aseguran que se ejecute el número deseado de pods en el clúster y mantienen su estado.
+
+**Servicio (Service)**
+Un servicio es un conjunto de pods que ofrecen la misma funcionalidad y que pueden ser accedidos por otros servicios o usuarios en el clúster. Los servicios proporcionan una dirección IP estable y un nombre de DNS para acceder a los pods.
+
+**Volúmenes (Volumes)**
+Los volúmenes en Kubernetes proporcionan un mecanismo para almacenar y acceder a datos en un contenedor de manera persistente. Los volúmenes pueden ser compartidos entre varios pods y pueden ser de diferentes tipos, como disco, red o almacenamiento en la nube.
+
+**Estado (Stateful)**
+Un estado es un término que se refiere a la capacidad de un pod para mantener su estado incluso después de reiniciarse. Los pods con estado son útiles para aplicaciones que requieren almacenamiento persistente, como bases de datos.
+
+**Namespace**
+Un namespace es un espacio virtual en el que se pueden organizar y aislar recursos de Kubernetes. Los namespaces permiten a los equipos trabajar de forma independiente en diferentes proyectos o aplicaciones dentro del mismo clúster.
+
+**YAML**
+YAML es un lenguaje de marcado de datos que se utiliza para definir configuraciones y recursos de Kubernetes en forma de archivos legibles por humanos. Los archivos YAML se utilizan comúnmente para describir la configuración del clúster, como los pods, servicios y controladores.
+
+**API**
+La API de Kubernetes proporciona una interfaz para interactuar con el clúster de Kubernetes y gestionar los recursos. La API se utiliza para crear, modificar y eliminar objetos de Kubernetes, como pods, servicios y volúmenes.
+
+**ReplicaSet**
+ReplicaSet es un tipo de controlador en Kubernetes que garantiza que el número deseado de replicas de un pod estén en ejecución en todo momento. ReplicaSet también permite escalar el número de replicas de un pod en función de la demanda de la aplicación.
+
+**Deployment**
+Deployment es un tipo de controlador en Kubernetes que facilita la implementación y actualización de una aplicación. El deployment maneja la replicación y el control de versiones de los pods y proporciona una manera de hacer rollbacks en caso de fallos en las actualizaciones.
+
+**Ingress**
+Ingress es una API que expone servicios HTTP y HTTPS fuera del clúster de Kubernetes. El ingreso es utilizado para enrutar el tráfico entrante a diferentes servicios y pods, lo que permite la exposición de aplicaciones en línea.
+
+**Secretos (Secrets)**
+Los secretos en Kubernetes son objetos que almacenan información sensible, como contraseñas, claves de API y certificados de TLS. Los secretos se almacenan de forma cifrada y se pueden utilizar en los pods para proporcionar acceso seguro a los recursos.
+
+**ConfigMap**
+ConfigMap es un objeto de Kubernetes que almacena datos de configuración en forma de pares clave-valor. ConfigMap se utiliza para separar la configuración de la aplicación de la imagen de contenedor, lo que permite la modificación de la configuración sin tener que volver a crear la imagen del contenedor.
+
+**Helm**
+Helm es un gestor de paquetes para Kubernetes que simplifica la gestión de aplicaciones. Helm proporciona un conjunto de herramientas para crear, compartir e instalar paquetes de aplicaciones en un clúster de Kubernetes.
+
+**Taints y Tolerations**
+Taints y Tolerations son mecanismos de Kubernetes para evitar que los pods se programen en nodos específicos o para permitir que los pods se programen en nodos específicos. Taints se aplican a los nodos para restringir la programación de los pods, mientras que las tolerancias se aplican a los pods para permitir la programación en nodos con ciertos taints.
+
+**Horizontal Pod Autoscaler (HPA)**
+HPA es un controlador de Kubernetes que automáticamente escala el número de replicas de un pod en función de la demanda de la aplicación. HPA utiliza métricas como el uso de la CPU y la memoria para determinar cuándo escalar los pods.
+
+Estos son solo algunos de los conceptos y terminologías clave de Kubernetes. La plataforma ofrece una amplia variedad de herramientas y recursos para administrar y orquestar contenedores de aplicaciones en entornos de producción.
+
+## Alternativas a Kubernetes
+
+Aunque Kubernetes es la plataforma de orquestación de contenedores más popular y ampliamente utilizada en la actualidad, existen varias alternativas disponibles para aquellos que buscan opciones diferentes. Algunas de las alternativas a Kubernetes incluyen:
+
+- **Docker Swarm:** Es una plataforma de orquestación de contenedores integrada en el motor de Docker. Swarm es más fácil de implementar y mantener que Kubernetes, lo que lo hace una buena opción para equipos pequeños o proyectos más simples.
+
+- **Apache Mesos:** Es una plataforma de orquestación de contenedores que ofrece una mayor flexibilidad y escalabilidad que Kubernetes. Mesos permite que los recursos del clúster se compartan entre varias aplicaciones y frameworks, lo que lo hace una buena opción para empresas que ejecutan múltiples aplicaciones en su infraestructura.
+
+- **Nomad:** Es una plataforma de orquestación de contenedores desarrollada por HashiCorp. Nomad se centra en la simplicidad y la facilidad de uso, lo que lo hace una buena opción para proyectos más pequeños y para equipos que buscan una alternativa más ligera a Kubernetes.
+
+- **Amazon ECS:** Es un servicio de orquestación de contenedores ofrecido por Amazon Web Services (AWS). ECS es fácil de usar y está completamente integrado con otros servicios de AWS, lo que lo hace una buena opción para empresas que utilizan AWS para su infraestructura.
+
+- **OpenShift:** Es una plataforma de orquestación de contenedores de código abierto desarrollada por Red Hat. OpenShift utiliza Kubernetes como base y proporciona una capa de gestión de aplicaciones más fácil de usar, lo que lo hace una buena opción para empresas que buscan una solución todo en uno.
+
+- **Google Cloud Run:** Es un servicio de orquestación de contenedores sin servidor ofrecido por Google Cloud. Cloud Run permite que los contenedores se ejecuten en un entorno completamente administrado y escalado automáticamente, lo que lo hace una buena opción para aplicaciones sin servidor y microservicios.
+
+Estas son solo algunas de las alternativas a Kubernetes disponibles en el mercado. Es importante evaluar las necesidades de la organización y seleccionar la plataforma de orquestación de contenedores que mejor se adapte a ellas.
+
 # Fuentes
 
-Pueden encontrar mayor información en su página oficial: https://kubernetes.io/docs/concepts/overview/
+Pueden encontrar mayor información en su página oficial: 
+- https://roadmap.sh/kubernetes
+- https://kubernetes.io/docs/concepts/overview/
+- https://kubernetes.io/docs/concepts/
