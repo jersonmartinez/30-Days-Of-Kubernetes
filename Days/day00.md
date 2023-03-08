@@ -250,6 +250,6 @@ Estas son solo algunas de las alternativas a Kubernetes disponibles en el mercad
 # Fuentes
 
 Pueden encontrar mayor información en su página oficial: 
-- https://roadmap.sh/kubernetes
-- https://kubernetes.io/docs/concepts/overview/
 - https://kubernetes.io/docs/concepts/
+- https://kubernetes.io/docs/concepts/overview/
+- https://roadmap.sh/kubernetes
