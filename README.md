@@ -12,6 +12,6 @@ Para utilizar Kubernetes, es necesario aprender los conceptos básicos de la pla
 
 [✔️] ♾️ 0 > [Vista general de Kubernetes](https://github.com/jersonmartinez/30-Days-Of-Kubernetes/blob/main/Days/day00.md)
 
-[🔒] ♾️ 1 > [Primeros pasos en k8s](https://github.com/jersonmartinez/30-Days-Of-Kubernetes/blob/main/Days/day01.md)
+[✔️] ♾️ 1 > [Primeros pasos en k8s](https://github.com/jersonmartinez/30-Days-Of-Kubernetes/blob/main/Days/day01.md)
 
 [🔒] ♾️ 2 > [Implementando aplicaciones](https://github.com/jersonmartinez/30-Days-Of-Kubernetes/blob/main/Days/day02.md)
