@@ -112,12 +112,16 @@ $ minikube dashboard
 👉  http://127.0.0.1:43663/api/v1/namespaces/kubernetes-dashboard/services/http:kubernetes-dashboard:/proxy/
 ```
 
-Abrir el primer enlace: 
+Abrir uno de los enlaces: 
 
+![imagen](https://user-images.githubusercontent.com/7296281/225211280-d1e0ffa6-ba0b-4b77-8a16-bf02ee1c99c2.png)
+
+Con esto estás listo.
 
 # Fuentes
 
 Pueden encontrar mayor información en su página oficial: 
 
+- https://kubernetes.io/docs/tasks/run-application/run-stateless-application-deployment/
 - https://kubernetes.io/docs/concepts/
 - https://roadmap.sh/kubernetes
