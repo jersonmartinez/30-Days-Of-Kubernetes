@@ -17,6 +17,8 @@
   - [¿Por qué deberías usar Kubernetes?](#por-qué-deberías-usar-kubernetes)
     - [Características de Kubernetes](#características-de-kubernetes)
   - [Conceptos y terminologías alrededor de Kubernetes](#conceptos-y-terminologías-alrededor-de-kubernetes)
+  - [Herramientas](#Herramientas)
+    - [Minikube](#Minikube)
   - [Alternativas a Kubernetes](#alternativas-a-kubernetes)
 - [Fuentes](#fuentes)
 
@@ -269,3 +271,4 @@ Pueden encontrar mayor información en su página oficial:
 - https://kubernetes.io/docs/concepts/
 - https://kubernetes.io/docs/concepts/overview/
 - https://roadmap.sh/kubernetes
+- https://minikube.sigs.k8s.io/docs/start/
