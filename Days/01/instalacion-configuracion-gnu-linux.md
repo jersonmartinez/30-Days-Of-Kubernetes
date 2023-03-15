@@ -1,12 +1,13 @@
 - [Instalación y configuración de Kubernetes en GNU/Linux](#instalación-y-configuración-de-kubernetes-en-gnulinux)
+  - [Requisitos](#requisitos)
   - [Conclusión](#conclusión)
 - [Fuentes](#fuentes)
 
-## Requisitos
+# Instalación y configuración de Kubernetes en GNU/Linux
 
 ...
 
-# Instalación y configuración de Kubernetes en GNU/Linux
+## Requisitos
 
 ...
 
