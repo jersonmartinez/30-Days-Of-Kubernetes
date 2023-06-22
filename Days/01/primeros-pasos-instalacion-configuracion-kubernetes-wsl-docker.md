@@ -537,3 +537,7 @@ En conclusión, la instalación y configuración de Kubernetes en un entorno de 
  
 - https://roadmap.sh/kubernetes
 - https://www.crashell.com/estudio/implementando_kubernetes_en_wsl_y_docker_desktop
+
+## Install from script bash
+
+https://github.com/jersonmartinez/30-Days-Of-Kubernetes/blob/main/Days/01/install_kubernetes_minikube.sh
