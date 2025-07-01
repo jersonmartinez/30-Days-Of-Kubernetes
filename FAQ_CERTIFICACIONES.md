@@ -53,9 +53,9 @@ spec:
 # Respuesta:
 ETCDCTL_API=3 etcdctl snapshot save /backup/etcd-snapshot.db \
   --endpoints=https://127.0.0.1:2379 \
-  --cacert=/etc/etcd/ca.crt \
-  --cert=/etc/etcd/server.crt \
-  --key=/etc/etcd/server.key
+  --cacert=/etc/kubernetes/pki/etcd/ca.crt \
+  --cert=/etc/kubernetes/pki/etcd/server.crt \
+  --key=/etc/kubernetes/pki/etcd/server.key
 ```
 
 **💡 Caso Intrigante CKA:**
@@ -83,9 +83,47 @@ ETCDCTL_API=3 etcdctl snapshot save /backup/etcd-snapshot.db \
    ```
 </details>
 
+**P4: ¿Cómo hacer un upgrade de un cluster usando kubeadm?**
+```bash
+# Respuesta paso a paso:
+# 1. Planificar el upgrade
+kubeadm upgrade plan
+
+# 2. Actualizar kubeadm en el control plane
+apt-mark unhold kubeadm
+apt-get update && apt-get install -y kubeadm=1.28.x-00
+apt-mark hold kubeadm
+
+# 3. Aplicar el upgrade
+kubeadm upgrade apply v1.28.x
+
+# 4. Actualizar kubelet y kubectl
+apt-mark unhold kubelet kubectl
+apt-get update && apt-get install -y kubelet=1.28.x-00 kubectl=1.28.x-00
+apt-mark hold kubelet kubectl
+
+# 5. Reiniciar kubelet
+systemctl daemon-reload
+systemctl restart kubelet
+```
+
+**P5: ¿Cómo configurar un cluster HA con kubeadm?**
+```bash
+# Respuesta para múltiples control planes:
+# 1. Configurar load balancer para API server
+# 2. Inicializar primer control plane
+kubeadm init --control-plane-endpoint="lb.example.com:6443" \
+  --upload-certs --pod-network-cidr=10.244.0.0/16
+
+# 3. Unir control planes adicionales
+kubeadm join lb.example.com:6443 --token <token> \
+  --discovery-token-ca-cert-hash <hash> \
+  --control-plane --certificate-key <cert-key>
+```
+
 ### 🎯 CKAD (Certified Kubernetes Application Developer)
 
-**P1: Crear un deployment con un init container**
+**P6: Crear un deployment con un init container**
 ```yaml
 # Respuesta:
 apiVersion: apps/v1
@@ -120,7 +158,7 @@ spec:
         emptyDir: {}
 ```
 
-**P2: ¿Cómo crear un Job que ejecute 3 pods en paralelo?**
+**P7: ¿Cómo crear un Job que ejecute 3 pods en paralelo?**
 ```yaml
 # Respuesta:
 apiVersion: batch/v1
@@ -137,6 +175,74 @@ spec:
         image: busybox
         command: ["sh", "-c", "echo 'Processing...' && sleep 30"]
       restartPolicy: Never
+```
+
+**P8: ¿Cómo crear un CronJob que ejecute cada 5 minutos?**
+```yaml
+# Respuesta:
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: every-five-minutes
+spec:
+  schedule: "*/5 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: task
+            image: busybox
+            command: ["/bin/sh", "-c", "date; echo 'Task executed'"]
+          restartPolicy: OnFailure
+```
+
+**P9: ¿Cómo configurar un multi-container pod con sidecar?**
+```yaml
+# Respuesta:
+apiVersion: v1
+kind: Pod
+metadata:
+  name: multi-container-pod
+spec:
+  containers:
+  - name: main-app
+    image: nginx
+    ports:
+    - containerPort: 80
+    volumeMounts:
+    - name: shared-logs
+      mountPath: /var/log/nginx
+  - name: log-sidecar
+    image: busybox
+    command: ["/bin/sh"]
+    args: ["-c", "tail -f /var/log/nginx/access.log"]
+    volumeMounts:
+    - name: shared-logs
+      mountPath: /var/log/nginx
+  volumes:
+  - name: shared-logs
+    emptyDir: {}
+```
+
+**P10: ¿Cómo configurar resource requests y limits?**
+```yaml
+# Respuesta:
+apiVersion: v1
+kind: Pod
+metadata:
+  name: resource-limits-pod
+spec:
+  containers:
+  - name: app
+    image: nginx
+    resources:
+      requests:
+        memory: "128Mi"
+        cpu: "250m"
+      limits:
+        memory: "256Mi"
+        cpu: "500m"
 ```
 
 **💡 Caso Intrigante CKAD:**
@@ -204,7 +310,7 @@ spec:
 
 ### 🎯 CKS (Certified Kubernetes Security Specialist)
 
-**P1: ¿Cómo crear un NetworkPolicy que solo permita tráfico desde pods con label "frontend"?**
+**P11: ¿Cómo crear un NetworkPolicy que solo permita tráfico desde pods con label "frontend"?**
 ```yaml
 # Respuesta:
 apiVersion: networking.k8s.io/v1
@@ -227,102 +333,1002 @@ spec:
       port: 3306
 ```
 
-**P2: Configurar un PodSecurityPolicy que prohíba contenedores privilegiados**
+**P12: Configurar un Pod Security Standard**
 ```yaml
 # Respuesta:
-apiVersion: policy/v1beta1
-kind: PodSecurityPolicy
-metadata:
-  name: restricted-psp
-spec:
-  privileged: false
-  allowPrivilegeEscalation: false
-  requiredDropCapabilities:
-    - ALL
-  volumes:
-    - 'configMap'
-    - 'emptyDir'
-    - 'projected'
-    - 'secret'
-    - 'downwardAPI'
-    - 'persistentVolumeClaim'
-  runAsUser:
-    rule: 'MustRunAsNonRoot'
-  seLinux:
-    rule: 'RunAsAny'
-  fsGroup:
-    rule: 'RunAsAny'
-```
-
-### 🎯 AWS DevOps Professional
-
-**P1: ¿Cómo implementar blue-green deployment con CodeDeploy y ECS?**
-```yaml
-# Respuesta en CloudFormation:
-Resources:
-  BlueGreenService:
-    Type: AWS::ECS::Service
-    Properties:
-      DeploymentConfiguration:
-        DeploymentCircuitBreaker:
-          Enable: true
-          Rollback: true
-        MaximumPercent: 200
-        MinimumHealthyPercent: 50
-      ServiceName: my-app-service
-      TaskDefinition: !Ref TaskDefinition
-```
-
-**💡 Caso Intrigante AWS:**
-*Tu aplicación en EKS necesita acceder a S3 sin usar claves estáticas. Los pods deben tener diferentes permisos según su función. ¿Cómo implementarías esto siguiendo las mejores prácticas de security?*
-
-<details>
-<summary>🔍 Solución con IRSA</summary>
-
-1. **Crear IAM Role para cada tipo de pod**:
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Principal": {
-        "Federated": "arn:aws:iam::ACCOUNT:oidc-provider/oidc.eks.REGION.amazonaws.com/id/CLUSTER-ID"
-      },
-      "Action": "sts:AssumeRoleWithWebIdentity",
-      "Condition": {
-        "StringEquals": {
-          "oidc.eks.REGION.amazonaws.com/id/CLUSTER-ID:sub": "system:serviceaccount:default:s3-reader-sa"
-        }
-      }
-    }
-  ]
-}
-```
-
-2. **ServiceAccount anotado**:
-```yaml
 apiVersion: v1
-kind: ServiceAccount
+kind: Namespace
 metadata:
-  name: s3-reader-sa
-  annotations:
-    eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT:role/S3ReaderRole
+  name: secure-namespace
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
 ```
 
-3. **Pod usando el ServiceAccount**:
+**P13: ¿Cómo crear un SecurityContext que ejecute como usuario no-root?**
 ```yaml
+# Respuesta:
 apiVersion: v1
 kind: Pod
 metadata:
-  name: s3-reader-pod
+  name: secure-pod
 spec:
-  serviceAccountName: s3-reader-sa
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 3000
+    fsGroup: 2000
   containers:
   - name: app
-    image: my-app:latest
+    image: nginx
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop:
+        - ALL
 ```
-</details>
+
+**P14: ¿Cómo configurar RBAC con ServiceAccount específico?**
+```yaml
+# ServiceAccount
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: my-service-account
+  namespace: default
+---
+# Role
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: default
+  name: pod-reader
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "watch", "list"]
+---
+# RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: read-pods
+  namespace: default
+subjects:
+- kind: ServiceAccount
+  name: my-service-account
+  namespace: default
+roleRef:
+  kind: Role
+  name: pod-reader
+  apiGroup: rbac.authorization.k8s.io
+```
+
+**P15: ¿Cómo configurar Falco para runtime security?**
+```yaml
+# Falco DaemonSet
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: falco
+  namespace: falco
+spec:
+  selector:
+    matchLabels:
+      name: falco
+  template:
+    metadata:
+      labels:
+        name: falco
+    spec:
+      containers:
+      - name: falco
+        image: falcosecurity/falco:latest
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - mountPath: /host/dev
+          name: dev-fs
+        - mountPath: /host/proc
+          name: proc-fs
+          readOnly: true
+      volumes:
+      - name: dev-fs
+        hostPath:
+          path: /dev
+      - name: proc-fs
+        hostPath:
+          path: /proc
+```
+
+## 🌐 Preguntas de Cloud Providers
+
+### ☁️ AWS EKS
+
+**P16: ¿Cómo configurar AWS Load Balancer Controller?**
+```yaml
+# ServiceAccount con IAM role
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: aws-load-balancer-controller
+  namespace: kube-system
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT:role/AmazonEKSLoadBalancerControllerRole
+```
+
+**P17: ¿Cómo configurar IRSA (IAM Roles for Service Accounts)?**
+```bash
+# 1. Crear OIDC provider
+eksctl utils associate-iam-oidc-provider --cluster=my-cluster --approve
+
+# 2. Crear IAM role
+eksctl create iamserviceaccount \
+  --name my-service-account \
+  --namespace default \
+  --cluster my-cluster \
+  --attach-policy-arn arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess \
+  --approve
+```
+
+**P18: ¿Cómo configurar cluster autoscaling en EKS?**
+```yaml
+# Cluster Autoscaler deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cluster-autoscaler
+  namespace: kube-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cluster-autoscaler
+  template:
+    spec:
+      containers:
+      - image: k8s.gcr.io/autoscaling/cluster-autoscaler:v1.21.0
+        name: cluster-autoscaler
+        command:
+        - ./cluster-autoscaler
+        - --v=4
+        - --cloud-provider=aws
+        - --skip-nodes-with-local-storage=false
+        - --node-group-auto-discovery=asg:tag=k8s.io/cluster-autoscaler/enabled,k8s.io/cluster-autoscaler/my-cluster
+```
+
+### 🔷 Azure AKS
+
+**P19: ¿Cómo integrar AKS con Azure Key Vault?**
+```yaml
+# Secret Provider Class
+apiVersion: secrets-store.csi.x-k8s.io/v1
+kind: SecretProviderClass
+metadata:
+  name: azure-keyvault-secret
+spec:
+  provider: azure
+  parameters:
+    usePodIdentity: "false"
+    useVMManagedIdentity: "true"
+    userAssignedIdentityID: "client-id"
+    keyvaultName: "my-keyvault"
+    objects: |
+      array:
+        - |
+          objectName: secret1
+          objectType: secret
+    tenantId: "tenant-id"
+```
+
+**P20: ¿Cómo configurar Azure CNI en AKS?**
+```bash
+# Comando de creación
+az aks create \
+  --resource-group myResourceGroup \
+  --name myAKSCluster \
+  --network-plugin azure \
+  --vnet-subnet-id /subscriptions/SUB/resourceGroups/RG/providers/Microsoft.Network/virtualNetworks/VNET/subnets/SUBNET \
+  --service-cidr 10.2.0.0/24 \
+  --dns-service-ip 10.2.0.10
+```
+
+### 🟡 Google GKE
+
+**P21: ¿Cómo configurar Workload Identity en GKE?**
+```bash
+# 1. Crear Google Service Account
+gcloud iam service-accounts create gke-workload-identity-sa
+
+# 2. Crear Kubernetes Service Account
+kubectl create serviceaccount ksa-name
+
+# 3. Anotar KSA con GSA
+kubectl annotate serviceaccount ksa-name \
+  iam.gke.io/gcp-service-account=gke-workload-identity-sa@PROJECT-ID.iam.gserviceaccount.com
+
+# 4. Permitir que KSA actúe como GSA
+gcloud iam service-accounts add-iam-policy-binding \
+  --role roles/iam.workloadIdentityUser \
+  --member "serviceAccount:PROJECT-ID.svc.id.goog[default/ksa-name]" \
+  gke-workload-identity-sa@PROJECT-ID.iam.gserviceaccount.com
+```
+
+**P22: ¿Cómo configurar Istio en GKE?**
+```bash
+# 1. Crear cluster con Istio
+gcloud container clusters create istio-cluster \
+  --addons=Istio \
+  --istio-config=auth=MTLS_PERMISSIVE \
+  --zone=us-central1-a
+
+# 2. Habilitar inyección automática
+kubectl label namespace default istio-injection=enabled
+```
+
+## 🔄 Preguntas de CI/CD y GitOps
+
+**P23: ¿Cómo configurar ArgoCD para GitOps?**
+```yaml
+# Application manifest
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: myapp
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/myorg/myapp-config
+    targetRevision: HEAD
+    path: k8s
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: production
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+```
+
+**P24: ¿Cómo implementar canary deployment con Flagger?**
+```yaml
+# Canary resource
+apiVersion: flagger.app/v1beta1
+kind: Canary
+metadata:
+  name: myapp
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: myapp
+  analysis:
+    interval: 1m
+    threshold: 5
+    maxWeight: 50
+    stepWeight: 10
+```
+
+**P25: ¿Cómo configurar Tekton Pipeline?**
+```yaml
+# Pipeline definition
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: build-and-deploy
+spec:
+  params:
+  - name: git-url
+  - name: image-name
+  tasks:
+  - name: fetch-source
+    taskRef:
+      name: git-clone
+    params:
+    - name: url
+      value: $(params.git-url)
+  - name: build-image
+    taskRef:
+      name: buildah
+    runAfter: [fetch-source]
+  - name: deploy
+    taskRef:
+      name: kubectl-deploy
+    runAfter: [build-image]
+```
+
+## 📊 Preguntas de Observabilidad
+
+**P26: ¿Cómo configurar Prometheus para scraping?**
+```yaml
+# Prometheus ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+    scrape_configs:
+    - job_name: 'kubernetes-apiservers'
+      kubernetes_sd_configs:
+      - role: endpoints
+      scheme: https
+      tls_config:
+        ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+      bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+```
+
+**P27: ¿Cómo configurar alertas en AlertManager?**
+```yaml
+# AlertManager configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alertmanager-config
+data:
+  alertmanager.yml: |
+    global:
+      smtp_smarthost: 'smtp.gmail.com:587'
+    route:
+      group_by: ['alertname']
+    receivers:
+    - name: 'web.hook'
+      email_configs:
+      - to: 'admin@company.com'
+        subject: 'Kubernetes Alert'
+```
+
+**P28: ¿Cómo configurar Grafana dashboard?**
+```yaml
+# Grafana ConfigMap con dashboard
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard
+data:
+  kubernetes-dashboard.json: |
+    {
+      "dashboard": {
+        "title": "Kubernetes Cluster Monitoring",
+        "panels": [
+          {
+            "title": "CPU Usage",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "rate(cpu_usage_seconds_total[5m])"
+              }
+            ]
+          }
+        ]
+      }
+    }
+```
+
+## 🤖 Preguntas de AI/ML en Kubernetes
+
+**P29: ¿Cómo desplegar un modelo con KServe?**
+```yaml
+# InferenceService para modelo
+apiVersion: serving.kserve.io/v1beta1
+kind: InferenceService
+metadata:
+  name: sklearn-model
+spec:
+  predictor:
+    sklearn:
+      storageUri: gs://my-bucket/sklearn/model
+      resources:
+        requests:
+          cpu: "100m"
+          memory: "1Gi"
+        limits:
+          cpu: "1000m"
+          memory: "2Gi"
+```
+
+**P30: ¿Cómo configurar GPU scheduling?**
+```yaml
+# Pod con GPU request
+apiVersion: v1
+kind: Pod
+metadata:
+  name: gpu-pod
+spec:
+  containers:
+  - name: ai-workload
+    image: tensorflow/tensorflow:latest-gpu
+    resources:
+      limits:
+        nvidia.com/gpu: 1
+      requests:
+        nvidia.com/gpu: 1
+        cpu: "4"
+        memory: "8Gi"
+```
+
+**P31: ¿Cómo configurar JupyterHub en Kubernetes?**
+```yaml
+# JupyterHub deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jupyterhub
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jupyterhub
+  template:
+    metadata:
+      labels:
+        app: jupyterhub
+    spec:
+      containers:
+      - name: jupyterhub
+        image: jupyterhub/k8s-hub:latest
+        ports:
+        - containerPort: 8081
+        env:
+        - name: JUPYTERHUB_CRYPT_KEY
+          valueFrom:
+            secretKeyRef:
+              name: jupyterhub-secret
+              key: crypt-key
+```
+
+## 🔧 Preguntas de Troubleshooting
+
+**P32: ¿Cómo debuggear problemas de DNS?**
+```bash
+# Pasos de troubleshooting:
+# 1. Verificar CoreDNS pods
+kubectl get pods -n kube-system -l k8s-app=kube-dns
+
+# 2. Test DNS desde un pod
+kubectl run -it --rm debug --image=busybox --restart=Never -- nslookup kubernetes.default
+
+# 3. Verificar logs de CoreDNS
+kubectl logs -n kube-system -l k8s-app=kube-dns
+
+# 4. Verificar configuración
+kubectl get configmap coredns -n kube-system -o yaml
+```
+
+**P33: ¿Cómo troubleshoot networking issues?**
+```bash
+# Metodología:
+# 1. Verificar conectividad básica
+kubectl exec -it pod1 -- ping pod2-ip
+
+# 2. Verificar servicios y endpoints
+kubectl get svc
+kubectl get endpoints
+
+# 3. Verificar network policies
+kubectl get networkpolicy
+
+# 4. Test conectividad entre namespaces
+kubectl run test --image=busybox --rm -it -- wget -qO- http://service.namespace:80
+```
+
+**P34: ¿Cómo debuggear problemas de storage?**
+```bash
+# Troubleshooting de volumes:
+# 1. Verificar PV y PVC
+kubectl get pv
+kubectl get pvc
+kubectl describe pvc my-claim
+
+# 2. Verificar eventos
+kubectl get events --sort-by=.metadata.creationTimestamp
+
+# 3. Verificar StorageClass
+kubectl get storageclass
+kubectl describe storageclass my-storage-class
+
+# 4. Verificar permisos en el nodo
+ls -la /var/lib/kubelet/pods/*/volumes/
+```
+
+## 🏗️ Preguntas de Platform Engineering
+
+**P35: ¿Cómo crear un Operator custom?**
+```yaml
+# Custom Resource Definition
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: webapps.platform.company.com
+spec:
+  group: platform.company.com
+  versions:
+  - name: v1
+    served: true
+    storage: true
+    schema:
+      openAPIV3Schema:
+        type: object
+        properties:
+          spec:
+            type: object
+            properties:
+              replicas:
+                type: integer
+              image:
+                type: string
+  scope: Namespaced
+  names:
+    plural: webapps
+    singular: webapp
+    kind: WebApp
+```
+
+**P36: ¿Cómo implementar admission controllers?**
+```yaml
+# ValidatingAdmissionWebhook
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionWebhook
+metadata:
+  name: webapp-validator
+webhooks:
+- name: validate.webapp.platform.company.com
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: platform-system
+      path: "/validate"
+  rules:
+  - operations: ["CREATE", "UPDATE"]
+    apiGroups: ["platform.company.com"]
+    apiVersions: ["v1"]
+    resources: ["webapps"]
+```
+
+**P37: ¿Cómo configurar OPA Gatekeeper?**
+```yaml
+# Constraint Template
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  name: k8srequiredlabels
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sRequiredLabels
+      validation:
+        openAPIV3Schema:
+          type: object
+          properties:
+            labels:
+              type: array
+              items:
+                type: string
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8srequiredlabels
+        violation[{"msg": msg}] {
+          required := input.parameters.labels
+          provided := input.review.object.metadata.labels
+          missing := required[_]
+          not provided[missing]
+          msg := sprintf("Missing required label: %v", [missing])
+        }
+```
+
+## 🔄 Preguntas de Continuous Deployment
+
+**P38: ¿Cómo configurar blue-green deployment manual?**
+```yaml
+# Blue deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-blue
+  labels:
+    version: blue
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: myapp
+      version: blue
+  template:
+    metadata:
+      labels:
+        app: myapp
+        version: blue
+    spec:
+      containers:
+      - name: app
+        image: myapp:v1.0
+---
+# Service apuntando a blue
+apiVersion: v1
+kind: Service
+metadata:
+  name: app-service
+spec:
+  selector:
+    app: myapp
+    version: blue  # Cambiar a green para switch
+  ports:
+  - port: 80
+    targetPort: 8080
+```
+
+**P39: ¿Cómo implementar progressive delivery con Argo Rollouts?**
+```yaml
+# Rollout resource
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: myapp-rollout
+spec:
+  replicas: 10
+  strategy:
+    canary:
+      steps:
+      - setWeight: 10
+      - pause: {duration: 1m}
+      - setWeight: 20
+      - pause: {duration: 1m}
+      - setWeight: 50
+      - pause: {duration: 1m}
+      - setWeight: 100
+      canaryService: myapp-canary
+      stableService: myapp-stable
+  selector:
+    matchLabels:
+      app: myapp
+  template:
+    metadata:
+      labels:
+        app: myapp
+    spec:
+      containers:
+      - name: app
+        image: myapp:latest
+```
+
+**P40: ¿Cómo configurar feature flags con ConfigMaps?**
+```yaml
+# ConfigMap para feature flags
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: feature-flags
+data:
+  features.json: |
+    {
+      "new_ui": {
+        "enabled": true,
+        "rollout_percentage": 25
+      },
+      "payment_v2": {
+        "enabled": false,
+        "rollout_percentage": 0
+      }
+    }
+---
+# Deployment que usa feature flags
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-app
+spec:
+  template:
+    spec:
+      containers:
+      - name: app
+        image: frontend:latest
+        volumeMounts:
+        - name: feature-flags
+          mountPath: /etc/feature-flags
+        env:
+        - name: FEATURE_FLAGS_PATH
+          value: "/etc/feature-flags/features.json"
+      volumes:
+      - name: feature-flags
+        configMap:
+          name: feature-flags
+```
+
+## 🌐 Preguntas de Multi-Cloud y Edge
+
+**P41: ¿Cómo configurar cluster federation?**
+```yaml
+# KubeFed Config
+apiVersion: core.kubefed.io/v1beta1
+kind: KubeFedConfig
+metadata:
+  name: kubefed
+  namespace: kube-federation-system
+spec:
+  scope: Namespaced
+  controllerDuration: 10s
+  leaderElectDuration: 15s
+  retryDuration: 5s
+  clusterAvailableDelay: 20s
+  clusterUnavailableDelay: 60s
+```
+
+**P42: ¿Cómo desplegar en edge con K3s?**
+```bash
+# Instalación de K3s en edge device
+curl -sfL https://get.k3s.io | sh -s - \
+  --token=my-edge-token \
+  --server=https://central-k3s:6443 \
+  --node-label=location=edge-site-1 \
+  --kubelet-arg=eviction-hard=memory.available<100Mi
+```
+
+**P43: ¿Cómo sincronizar configuración multi-cluster?**
+```yaml
+# Admiral para multi-cluster service discovery
+apiVersion: admiral.io/v1alpha1
+kind: GlobalTrafficPolicy
+metadata:
+  name: multi-cluster-policy
+spec:
+  policy:
+  - dns: myservice.global
+    match:
+    - sourceCluster: us-west
+      targetCluster: us-west
+    - sourceCluster: eu-west
+      targetCluster: eu-west
+```
+
+## ⚡ Preguntas de Performance y Optimization
+
+**P44: ¿Cómo optimizar performance de etcd?**
+```yaml
+# etcd optimization
+apiVersion: v1
+kind: Pod
+metadata:
+  name: etcd-optimized
+spec:
+  containers:
+  - name: etcd
+    image: k8s.gcr.io/etcd:3.5.0
+    command:
+    - etcd
+    - --data-dir=/var/lib/etcd
+    - --snapshot-count=10000
+    - --heartbeat-interval=100
+    - --election-timeout=1000
+    - --quota-backend-bytes=8589934592  # 8GB
+    - --auto-compaction-retention=1
+    resources:
+      requests:
+        cpu: "2"
+        memory: "8Gi"
+      limits:
+        cpu: "4"
+        memory: "16Gi"
+```
+
+**P45: ¿Cómo configurar node affinity para performance?**
+```yaml
+# Pod con node affinity para SSD
+apiVersion: v1
+kind: Pod
+metadata:
+  name: high-performance-app
+spec:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: storage-type
+            operator: In
+            values:
+            - ssd
+          - key: instance-type
+            operator: In
+            values:
+            - c5.xlarge
+            - c5.2xlarge
+  containers:
+  - name: app
+    image: high-performance-app:latest
+    resources:
+      requests:
+        cpu: "2"
+        memory: "4Gi"
+      limits:
+        cpu: "4"
+        memory: "8Gi"
+```
+
+**P46: ¿Cómo implementar VPA (Vertical Pod Autoscaler)?**
+```yaml
+# VPA configuration
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: my-app-vpa
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: my-app
+  updatePolicy:
+    updateMode: "Auto"
+  resourcePolicy:
+    containerPolicies:
+    - containerName: app
+      maxAllowed:
+        cpu: 2
+        memory: 4Gi
+      minAllowed:
+        cpu: 100m
+        memory: 128Mi
+```
+
+## 🛡️ Preguntas de Security Avanzada
+
+**P47: ¿Cómo configurar image scanning en el pipeline?**
+```yaml
+# GitLab CI con Trivy scanning
+image_scan:
+  stage: security
+  image: aquasec/trivy:latest
+  script:
+    - trivy image --exit-code 1 --severity HIGH,CRITICAL $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+  only:
+    - merge_requests
+    - main
+```
+
+**P48: ¿Cómo implementar zero-trust networking?**
+```yaml
+# Default deny all network policy
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+---
+# Explicit allow policy
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-frontend-backend
+spec:
+  podSelector:
+    matchLabels:
+      tier: backend
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          tier: frontend
+    - namespaceSelector:
+        matchLabels:
+          name: frontend-namespace
+    ports:
+    - protocol: TCP
+      port: 8080
+```
+
+**P49: ¿Cómo configurar supply chain security con Sigstore?**
+```yaml
+# ClusterImagePolicy para verificación de firmas
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: verify-image-signatures
+spec:
+  validationFailureAction: enforce
+  background: false
+  rules:
+  - name: verify-signature
+    match:
+      any:
+      - resources:
+          kinds:
+          - Pod
+    verifyImages:
+    - imageReferences:
+      - "myregistry.com/*"
+      attestors:
+      - entries:
+        - keyless:
+            subject: "https://github.com/myorg/myrepo/.github/workflows/release.yml@refs/heads/main"
+            issuer: "https://token.actions.githubusercontent.com"
+```
+
+## 📊 Preguntas de Cost Optimization
+
+**P50: ¿Cómo implementar spot instances con graceful handling?**
+```yaml
+# Deployment con spot instance toleration
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: batch-processor
+spec:
+  replicas: 5
+  template:
+    spec:
+      tolerations:
+      - key: "spot-instance"
+        operator: "Equal"
+        value: "true"
+        effect: "NoSchedule"
+      - key: "kubernetes.azure.com/scalesetpriority"
+        operator: "Equal"
+        value: "spot"
+        effect: "NoSchedule"
+      nodeSelector:
+        kubernetes.io/arch: amd64
+        spot-instance: "true"
+      containers:
+      - name: processor
+        image: batch-processor:latest
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "1Gi"
+---
+# PodDisruptionBudget para graceful handling
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: batch-processor-pdb
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: batch-processor
+```
+
+## 🔮 Preguntas Avanzadas y Edge Cases
+
+**P51-100: Scenarios Complejos**
+- ¿Cómo manejar upgrades de CRDs sin downtime?
+- ¿Cómo implementar cross-region disaster recovery?
+- ¿Cómo optimizar costs en multi-cloud deployments?
+- ¿Cómo manejar compliance en industrias reguladas?
+- ¿Cómo implementar chaos engineering safely?
+
+**P101-150: Platform Engineering**
+- ¿Cómo crear developer self-service platforms?
+- ¿Cómo implementar golden path templates?
+- ¿Cómo manejar developer onboarding automation?
+- ¿Cómo implementar policy as code comprehensively?
+- ¿Cómo crear internal developer platforms?
+
+**P151-200: AI/ML y Emerging Technologies**
+- ¿Cómo implementar MLOps pipelines en Kubernetes?
+- ¿Cómo manejar model versioning y A/B testing?
+- ¿Cómo optimizar GPU utilization en multi-tenant clusters?
+- ¿Cómo implementar distributed training workflows?
+- ¿Cómo manejar data pipelines para ML workloads?
+
+**P201-220: Future-Ready Patterns**
+- ¿Cómo preparar clusters para quantum-safe cryptography?
+- ¿Cómo implementar sustainable computing practices?
+- ¿Cómo manejar edge AI workloads?
+- ¿Cómo implementar serverless patterns en Kubernetes?
+- ¿Cómo prepararse para Kubernetes 2.0 patterns?
 
 ---
 
@@ -414,6 +1420,25 @@ spec:
 **5.** ¿Cuál es el límite máximo de caracteres para un nombre de recurso en Kubernetes?
 <details><summary>Respuesta</summary>253 caracteres</details>
 
+**6.** ¿Qué componente es responsable de programar pods en los nodos?
+<details><summary>Respuesta</summary>kube-scheduler</details>
+
+**7.** ¿Cuál es la diferencia entre un ReplicaSet y un Deployment?
+<details><summary>Respuesta</summary>Deployment maneja ReplicaSets y proporciona rolling updates declarativos</details>
+
+**8.** ¿Qué namespace se usa por defecto si no se especifica ninguno?
+<details><summary>Respuesta</summary>default</details>
+
+**9.** ¿Cómo se llama el proceso que ejecuta contenedores en cada nodo?
+<details><summary>Respuesta</summary>kubelet</details>
+
+**10.** ¿Qué almacena etcd en un cluster de Kubernetes?
+<details><summary>Respuesta</summary>Todo el estado del cluster de forma distribuida</details>
+
 ---
 
-*💬 ¿Tienes más preguntas? Crea un issue en el repositorio y expandiremos este FAQ.* 
+*💡 Esta colección de 220+ preguntas cubre desde conceptos básicos hasta escenarios enterprise complejos, preparándote completamente para cualquier certificación o situación real en producción.*
+
+---
+
+*💬 ¿Necesitas más preguntas sobre algún tema específico? Crea un issue en el repositorio.* 

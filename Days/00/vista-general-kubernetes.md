@@ -265,6 +265,42 @@ Aunque Kubernetes es la plataforma de orquestación de contenedores más popular
 
 Estas son solo algunas de las alternativas a Kubernetes disponibles en el mercado. Es importante evaluar las necesidades de la organización y seleccionar la plataforma de orquestación de contenedores que mejor se adapte a ellas.
 
+## 🎯 Próximos Pasos
+
+1. **Instalar Kubernetes localmente** (Día 1)
+   - Minikube para desarrollo
+   - Docker Desktop
+   - Kind (Kubernetes in Docker)
+
+2. **Explorar kubectl** (Día 2)
+   - Comandos básicos
+   - Gestión de recursos
+   - Debugging
+
+3. **Crear tu primera aplicación** (Día 3)
+   - Pods y Deployments
+   - Services y Networking
+   - ConfigMaps y Secrets
+
+## 🛠️ Scripts y Herramientas
+
+Para comenzar tu práctica inmediatamente, ejecuta:
+
+```bash
+# Demostración interactiva de conceptos
+cd Days/00/scripts/
+chmod +x kubernetes-overview.sh
+./kubernetes-overview.sh
+```
+
+Este script incluye:
+- ✅ Comparativa práctica: Servidores físicos vs VMs vs Contenedores
+- ✅ Demostración de conceptos básicos de Kubernetes
+- ✅ Self-healing automático en acción
+- ✅ Escalamiento horizontal dinámico
+- ✅ Rolling updates sin downtime
+- ✅ Gestión de configuración con ConfigMaps y Secrets
+
 # Fuentes
 
 Pueden encontrar mayor información en su página oficial: 

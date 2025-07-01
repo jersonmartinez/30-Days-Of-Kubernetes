@@ -2,11 +2,11 @@
 
 <div align="center">
 
-![Kubernetes](https://img.shields.io/badge/kubernetes-%23326ce5.svg?style=for-the-badge&logo=kubernetes&logoColor=white)
-![DevOps](https://img.shields.io/badge/DevOps-0078D4?style=for-the-badge&logo=azure-devops&logoColor=white)
-![AWS](https://img.shields.io/badge/AWS-%23FF9900.svg?style=for-the-badge&logo=amazon-aws&logoColor=white)
-![Azure](https://img.shields.io/badge/azure-%230072C6.svg?style=for-the-badge&logo=azure&logoColor=white)
-![Google Cloud](https://img.shields.io/badge/GoogleCloud-%234285F4.svg?style=for-the-badge&logo=google-cloud&logoColor=white)
+[![Kubernetes](https://img.shields.io/badge/kubernetes-%23326ce5.svg?style=for-the-badge&logo=kubernetes&logoColor=white)](https://kubernetes.io/docs/home/)
+[![DevOps](https://img.shields.io/badge/DevOps-0078D4?style=for-the-badge&logo=azure-devops&logoColor=white)](./DevOps-Methodologies/)
+[![AWS](https://img.shields.io/badge/AWS-%23FF9900.svg?style=for-the-badge&logo=amazon-aws&logoColor=white)](./Days/15/)
+[![Azure](https://img.shields.io/badge/azure-%230072C6.svg?style=for-the-badge&logo=azure&logoColor=white)](./Days/16/)
+[![Google Cloud](https://img.shields.io/badge/GoogleCloud-%234285F4.svg?style=for-the-badge&logo=google-cloud&logoColor=white)](./Days/17/)
 
 **La guía más completa de Kubernetes en español 🚀**
 *Desde fundamentos hasta certificaciones profesionales*
@@ -41,7 +41,7 @@ Aprenderás no solo qué es Kubernetes, sino **cómo implementarlo en producció
 - Tendencias 2024-2028
 
 ### 🎓 [FAQ Certificaciones](./FAQ_CERTIFICACIONES.md)
-- Preguntas reales de exámenes CKA, CKAD, CKS
+- 200+ preguntas reales de exámenes CKA, CKAD, CKS
 - Casos prácticos de AWS, Azure, GCP
 - Plan de estudio estructurado
 - Tips y simulacros
@@ -52,22 +52,35 @@ Aprenderás no solo qué es Kubernetes, sino **cómo implementarlo en producció
 - Optimizaciones de costos y performance
 - Troubleshooting avanzado
 
+### 🏢 [Casos de Estudio Reales](./Case-Studies/)
+- Netflix: 1000+ microservicios en producción
+- Spotify: 1300+ servicios y Backstage platform
+- Pokémon GO: Escalado extremo en tiempo real
+- Startups: Desde 0 hasta IPO con Kubernetes
+
+### 🔄 [Metodologías DevOps](./DevOps-Methodologies/)
+- GitOps con ArgoCD y Flux
+- SRE con Prometheus y Grafana
+- DevSecOps con OPA Gatekeeper
+- FinOps con Kubecost
+- Platform Engineering con Backstage
+
 ---
 
-## 🗓️ Plan de 30 Días
+## 🗓️ Plan de 30 Días - Julio 2025
 
-### 📚 **Semana 1: Fundamentos Sólidos**
+### 📚 **Semana 1: Fundamentos Sólidos (1-7 Julio)**
 | Día | Tema | Estado | Enfoque DevOps |
 |-----|------|--------|----------------|
 | [00](./Days/00/vista-general-kubernetes.md) | Vista general de Kubernetes | ✅ | Cultura y filosofía |
 | [01](./Days/01/) | Instalación multi-plataforma | ✅ | Infrastructure as Code |
 | [02](./Days/02/implementando-aplicaciones.md) | Implementando aplicaciones | ✅ | CI/CD básico |
-| 03 | Kubectl mastery y automatización | 🔒 | CLI optimization |
-| 04 | Pods y debugging avanzado | 🔒 | Observabilidad |
-| 05 | Services y networking profundo | 🔒 | Service discovery |
-| 06 | ConfigMaps, Secrets y GitOps | 🔒 | Configuration management |
+| [03](./Days/03/) | Kubectl mastery y automatización | 🔒 | CLI optimization |
+| [04](./Days/04/) | Pods y debugging avanzado | 🔒 | Observabilidad |
+| [05](./Days/05/) | Services y networking profundo | 🔒 | Service discovery |
+| [06](./Days/06/) | ConfigMaps, Secrets y GitOps | 🔒 | Configuration management |
 
-### 🔧 **Semana 2: DevOps en Acción**
+### 🔧 **Semana 2: DevOps en Acción (8-14 Julio)**
 | Día | Tema | Estado | Enfoque DevOps |
 |-----|------|--------|----------------|
 | 07 | Persistent Volumes y StatefulSets | 🔒 | Data persistence |
@@ -78,18 +91,18 @@ Aprenderás no solo qué es Kubernetes, sino **cómo implementarlo en producció
 | 12 | ArgoCD y GitOps workflow | 🔒 | Continuous deployment |
 | 13 | Monitoring con Prometheus/Grafana | 🔒 | Site reliability |
 
-### ☁️ **Semana 3: Cloud Native**
+### ☁️ **Semana 3: Cloud Native (15-21 Julio)**
 | Día | Tema | Estado | Enfoque DevOps |
 |-----|------|--------|----------------|
 | 14 | Logging centralizado (ELK/Fluentd) | 🔒 | Centralized observability |
-| 15 | AWS EKS en producción | 🔒 | Cloud deployment |
-| 16 | Azure AKS y integración | 🔒 | Multi-cloud strategy |
-| 17 | Google GKE y automatización | 🔒 | Cloud-native tools |
+| [15](./Days/15/) | AWS EKS en producción | 🔒 | Cloud deployment |
+| [16](./Days/16/) | Azure AKS y integración | 🔒 | Multi-cloud strategy |
+| [17](./Days/17/) | Google GKE y automatización | 🔒 | Cloud-native tools |
 | 18 | Service Mesh con Istio | 🔒 | Advanced networking |
 | 19 | CI/CD completo con Jenkins/GitLab | 🔒 | Pipeline optimization |
 | 20 | Chaos Engineering con Litmus | 🔒 | Resilience testing |
 
-### 🏆 **Semana 4: Nivel Expert**
+### 🏆 **Semana 4: Nivel Expert (22-28 Julio)**
 | Día | Tema | Estado | Enfoque DevOps |
 |-----|------|--------|----------------|
 | 21 | Operators y Custom Resources | 🔒 | Platform engineering |
@@ -100,7 +113,7 @@ Aprenderás no solo qué es Kubernetes, sino **cómo implementarlo en producció
 | 26 | Security scanning y compliance | 🔒 | DevSecOps |
 | 27 | Troubleshooting patterns | 🔒 | Incident response |
 
-### 🎓 **Días Finales: Certificación**
+### 🎓 **Días Finales: Certificación (29-31 Julio)**
 | Día | Tema | Estado | Enfoque DevOps |
 |-----|------|--------|----------------|
 | 28 | Preparación CKA/CKAD intensive | 🔒 | Professional readiness |
@@ -188,26 +201,13 @@ Rolling update stuck. Pods en "Running" pero health checks fallan. Funciona en l
 
 ## 📈 Progreso de Implementación
 
-```mermaid
-graph LR
-    A[Fundamentos] --> B[DevOps Básico]
-    B --> C[Cloud Native]
-    C --> D[Expert Level]
-    D --> E[Certificación]
-    
-    A --> |✅ Completado| A1[3 días]
-    B --> |🔒 Planificado| B1[7 días]
-    C --> |🔒 Planificado| C1[7 días]
-    D --> |🔒 Planificado| D1[10 días]
-    E --> |🔒 Planificado| E1[3 días]
-```
-
 **Estado actual**: 10% completado (3/30 días)
-**Próximos hitos**:
-- Semana 1 completa: 15 marzo 2024
-- Módulo DevOps: 30 marzo 2024  
-- Cloud providers: 15 abril 2024
-- Preparación certificaciones: 30 abril 2024
+**Cronograma Julio 2025**:
+- Semana 1 completa: 8 julio 2025
+- Semana 2 DevOps: 15 julio 2025  
+- Semana 3 Cloud: 22 julio 2025
+- Semana 4 Expert: 29 julio 2025
+- Certificación lista: 31 julio 2025
 
 ---
 
@@ -229,28 +229,16 @@ graph LR
 
 ---
 
-## 🌟 Testimonios de la Comunidad
-
-> *"Esta guía me ayudó a pasar de junior a senior DevOps en 6 meses. Los casos prácticos son oro puro."*
-> 
-> **— María González, DevOps Engineer @ MercadoLibre**
-
-> *"Finally, a comprehensive Kubernetes guide in Spanish that doesn't lose technical depth."*
-> 
-> **— Carlos Ruiz, Platform Engineer @ Spotify**
-
----
-
 ## 📞 Conecta Conmigo
 
 <div align="center">
 
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://linkedin.com/in/jersonmartinez)
 [![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/jersonmartinez)
-[![YouTube](https://img.shields.io/badge/YouTube-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://youtube.com/@jersonmartinez)
+[![YouTube](https://img.shields.io/badge/YouTube-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://www.youtube.com/@DevOpsWithJerson/)
 
 **¿Preguntas? ¿Sugerencias?** 
-Abre un [issue](https://github.com/jersonmartinez/30-Days-Of-Kubernetes/issues) o únete a nuestro [Discord](https://discord.gg/kubernetes-es)
+Abre un [issue](https://github.com/jersonmartinez/30-Days-Of-Kubernetes/issues) o comenta en los videos de YouTube
 
 </div>
 

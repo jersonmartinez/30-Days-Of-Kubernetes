@@ -529,9 +529,46 @@ sudo rm /usr/local/bin/kubectl
 
 Es importante tener en cuenta que desinstalar Kubernetes puede tener implicaciones en las aplicaciones que se están ejecutando en el clúster. Se recomienda hacer una copia de seguridad de los datos y tomar precauciones antes de desinstalar Kubernetes.
 
+## 🛠️ Script de Instalación Automatizada
+
+Para acelerar tu aprendizaje, hemos creado un script automatizado que instala y configura Minikube de manera optimizada:
+
+```bash
+# Script de instalación completa y optimizada
+cd Days/01/scripts/
+chmod +x minikube-setup.sh
+./minikube-setup.sh
+```
+
+**¿Qué hace este script?**
+- ✅ Verifica prerrequisitos del sistema automáticamente
+- ✅ Instala Docker, kubectl y Minikube con las últimas versiones
+- ✅ Configura el cluster con optimizaciones de rendimiento
+- ✅ Habilita addons esenciales (dashboard, ingress, metrics-server, registry)
+- ✅ Configura herramientas útiles (k9s, aliases, autocompletado)
+- ✅ Crea ejemplos de demostración listos para usar
+- ✅ Verifica la instalación completa con tests
+
+**Personalización del script:**
+```bash
+# Configuración personalizada para tu hardware
+./minikube-setup.sh --cpus 6 --memory 16384 --driver virtualbox --disk-size 100g
+```
+
+**Opciones disponibles:**
+- `--cpus NUMBER`: Número de CPUs (default: 4)
+- `--memory NUMBER`: Memoria en MB (default: 8192)
+- `--driver DRIVER`: Driver de virtualización (default: docker)
+- `--disk-size SIZE`: Tamaño del disco (default: 50g)
+- `--cluster-name NAME`: Nombre del cluster (default: minikube)
+
+💡 **Recomendación**: Ejecuta el script automatizado primero para tener un entorno funcional inmediatamente, luego sigue el proceso manual arriba para entender cada paso en detalle.
+
 ## Conclusión
 
-En conclusión, la instalación y configuración de Kubernetes en un entorno de desarrollo es una habilidad esencial para cualquier desarrollador que desee probar y desplegar aplicaciones de forma eficiente y escalable en contenedores. En este artículo, hemos cubierto los pasos necesarios para instalar y configurar Kubernetes en WSL (Windows Subsystem for Linux) y Docker Desktop para distribuciones GNU/Linux. También hemos aprendido sobre los conceptos básicos de Kubernetes, como pods y servicios, que son fundamentales para comprender cómo funciona la orquestación de contenedores en Kubernetes. Esperamos que esta guía le haya resultado útil y le haya brindado una buena comprensión de los fundamentos de Kubernetes y su implementación en un entorno de desarrollo. ¡Ahora está listo para comenzar a trabajar con Kubernetes!
+En conclusión, la instalación y configuración de Kubernetes en un entorno de desarrollo es una habilidad esencial para cualquier desarrollador que desee probar y desplegar aplicaciones de forma eficiente y escalable en contenedores. En este artículo, hemos cubierto los pasos necesarios para instalar y configurar Kubernetes en WSL (Windows Subsystem for Linux) y Docker Desktop para distribuciones GNU/Linux. También hemos aprendido sobre los conceptos básicos de Kubernetes, como pods y servicios, que son fundamentales para comprender cómo funciona la orquestación de contenedores en Kubernetes. 
+
+Con el script automatizado incluido, ahora tienes dos caminos: el aprendizaje rápido para empezar inmediatamente, y el conocimiento profundo del proceso manual. Esperamos que esta guía te haya resultado útil y te haya brindado una buena comprensión de los fundamentos de Kubernetes y su implementación en un entorno de desarrollo. ¡Ahora estás listo para comenzar a trabajar con Kubernetes!
 
 # Fuentes
  

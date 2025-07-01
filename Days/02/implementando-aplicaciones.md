@@ -118,6 +118,70 @@ Abrir uno de los enlaces:
 
 Con esto estás listo.
 
+## 🚀 Demo Completa de Microservicios
+
+Para llevar el aprendizaje al siguiente nivel, hemos creado una demostración completa de una aplicación de microservicios que puedes desplegar en tu cluster:
+
+```bash
+# Despliegue completo de aplicación E-commerce
+cd Days/02/scripts/
+chmod +x deploy-microservices.sh
+./deploy-microservices.sh
+```
+
+**Esta demo incluye:**
+- 🎨 **Frontend web** con nginx y configuración avanzada
+- 🔧 **Backend API** con endpoints simulados (/health, /api/products, /users)
+- 🗄️ **Base de datos PostgreSQL** con datos de ejemplo precargados
+- ⚡ **Redis Cache** para optimización de rendimiento
+- 🔒 **Configuración de seguridad** (RBAC, NetworkPolicies, SecurityContext)
+- 📊 **Monitoring básico** y métricas de aplicación
+- 🚀 **Auto-scaling** configurado (HPA) para manejo de carga
+- 🌐 **Ingress** para acceso externo con balanceador
+- 🏗️ **ConfigMaps y Secrets** gestionados de forma segura
+
+**Arquitectura de la demo:**
+```
+Internet  ─┐
+           │
+    ┌─────────────┐
+    │   Ingress   │ (Load Balancer)
+    └─────────────┘
+           │
+    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+    │   Frontend  │    │   Backend   │    │  Database   │
+    │   (nginx)   │───▶│    (API)    │───▶│ (PostgreSQL)│
+    └─────────────┘    └─────────────┘    └─────────────┘
+           │                   │                   │
+           └───────────────────┼───────────────────┘
+                               ▼
+                       ┌─────────────┐
+                       │    Redis    │
+                       │   (Cache)   │
+                       └─────────────┘
+```
+
+**Lo que aprenderás implementando:**
+- ✅ Gestión de **ConfigMaps** para configuración de aplicaciones
+- ✅ Uso de **Secrets** para datos sensibles (passwords, API keys)
+- ✅ **Deployments** con estrategias de rolling update
+- ✅ **Services** para comunicación entre microservicios
+- ✅ **StatefulSets** para aplicaciones con estado (base de datos)
+- ✅ **PersistentVolumes** para almacenamiento persistente
+- ✅ **Ingress** para enrutamiento de tráfico HTTP/HTTPS
+- ✅ **NetworkPolicies** para seguridad de red
+- ✅ **HPA** (Horizontal Pod Autoscaler) para escalamiento automático
+- ✅ **Resource limits** y **requests** para optimización de recursos
+
+**Después del despliegue podrás:**
+- 🌐 Acceder a la aplicación web desde tu navegador
+- 📊 Ver métricas en tiempo real en el dashboard de Kubernetes
+- 🔧 Escalar servicios dinámicamente bajo carga
+- 🔍 Inspeccionar logs y debuggear problemas
+- 🧪 Experimentar con actualizaciones sin downtime
+
+💡 **Tip**: Este script te dará una aplicación completa funcionando que puedes usar como base para tus propios proyectos y para experimentar con todos los conceptos avanzados de Kubernetes.
+
 # Fuentes
 
 Pueden encontrar mayor información en su página oficial: 
