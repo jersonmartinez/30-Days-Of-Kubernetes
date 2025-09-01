@@ -1,0 +1,84 @@
+name: Cleanup AKS Resources
+
+on:
+  schedule:
+    # Ejecutar todos los domingos a las 2 AM UTC
+    - cron: '0 2 * * 0'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to cleanup'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+        - dev
+        - staging
+        - prod
+
+env:
+  RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
+  CLUSTER_NAME: my-aks-cluster
+
+jobs:
+  cleanup:
+    name: 'Cleanup AKS Resources'
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Setup kubectl
+      uses: azure/setup-kubectl@v3
+      with:
+        version: 'v1.28.0'
+
+    - name: Get AKS credentials
+      run: |
+        az aks get-credentials \
+          --resource-group $RESOURCE_GROUP \
+          --name $CLUSTER_NAME
+
+    - name: Cleanup Kubernetes resources
+      run: |
+        # Eliminar pods en estado Error o CrashLoopBackOff
+        kubectl delete pods --field-selector=status.phase=Failed
+        kubectl delete pods --field-selector=status.phase=Pending --force
+
+        # Eliminar jobs completados hace más de 1 hora
+        kubectl delete jobs --field-selector=status.successful=1 --older-than=1h
+
+        # Limpiar PVC no utilizados
+        kubectl delete pvc --field-selector=status.phase=Lost
+
+        # Limpiar configmaps huérfanos
+        kubectl delete configmap --all --namespace=default
+
+    - name: Cleanup Azure resources
+      run: |
+        # Eliminar discos no utilizados
+        for disk in $(az disk list --resource-group $RESOURCE_GROUP --query "[?diskState=='Unattached'].name" -o tsv); do
+          echo "Eliminando disco: $disk"
+          az disk delete --resource-group $RESOURCE_GROUP --name $disk --yes
+        done
+
+        # Eliminar snapshots antiguos
+        for snapshot in $(az snapshot list --resource-group $RESOURCE_GROUP --query "[?timeCreated<'$(date -d '7 days ago' +%Y-%m-%dT%H:%MZ)'].name" -o tsv); do
+          echo "Eliminando snapshot: $snapshot"
+          az snapshot delete --resource-group $RESOURCE_GROUP --name $snapshot --yes
+        done
+
+    - name: Send notification
+      if: always()
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        text: "AKS Cleanup completed - ${{ job.status }}"
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

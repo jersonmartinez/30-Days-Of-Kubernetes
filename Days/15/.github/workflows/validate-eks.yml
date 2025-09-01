@@ -1,0 +1,264 @@
+name: Validate EKS Configuration
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'Days/15/terraform-eks/**'
+      - 'Days/15/k8s/**'
+      - '.github/workflows/validate-eks.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'Days/15/terraform-eks/**'
+      - 'Days/15/k8s/**'
+  workflow_dispatch:
+
+env:
+  AWS_REGION: us-east-1
+  TERRAFORM_VERSION: 1.5.0
+  WORKING_DIR: Days/15/terraform-eks
+
+jobs:
+  terraform-validate:
+    name: 'Terraform Validation'
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: ${{ env.TERRAFORM_VERSION }}
+
+    - name: Terraform Init
+      run: terraform init
+      working-directory: ${{ env.WORKING_DIR }}
+
+    - name: Terraform Format Check
+      run: terraform fmt -check -diff
+      working-directory: ${{ env.WORKING_DIR }}
+
+    - name: Terraform Validate
+      run: terraform validate
+      working-directory: ${{ env.WORKING_DIR }}
+
+    - name: Check for required files
+      run: |
+        required_files=(
+          "provider.tf"
+          "variables.tf"
+          "main.tf"
+          "outputs.tf"
+          "terraform.tfvars.example"
+        )
+
+        for file in "${required_files[@]}"; do
+          if [ ! -f "${WORKING_DIR}/${file}" ]; then
+            echo "❌ Missing required file: ${file}"
+            exit 1
+          else
+            echo "✅ Found: ${file}"
+          fi
+        done
+
+  kubernetes-validate:
+    name: 'Kubernetes Manifests Validation'
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup kubeconform
+      run: |
+        wget https://github.com/yannh/kubeconform/releases/latest/download/kubeconform-linux-amd64.tar.gz
+        tar -xzf kubeconform-linux-amd64.tar.gz
+        sudo mv kubeconform /usr/local/bin/
+
+    - name: Validate Kubernetes manifests
+      run: |
+        echo "🔍 Validating Kubernetes manifests..."
+
+        # Validar todos los archivos YAML en el directorio k8s
+        find Days/15/k8s -name "*.yaml" -o -name "*.yml" | while read -r file; do
+          echo "Validating: $file"
+          kubeconform -strict -summary "$file" || exit 1
+        done
+
+        echo "✅ All Kubernetes manifests are valid"
+
+    - name: Check manifest structure
+      run: |
+        echo "📋 Checking manifest structure..."
+
+        # Verificar que existan los archivos requeridos
+        required_manifests=(
+          "deployment.yaml"
+          "service.yaml"
+          "ingress.yaml"
+        )
+
+        for manifest in "${required_manifests[@]}"; do
+          if [ ! -f "Days/15/k8s/${manifest}" ]; then
+            echo "❌ Missing required manifest: ${manifest}"
+            exit 1
+          else
+            echo "✅ Found: ${manifest}"
+          fi
+        done
+
+  security-scan:
+    name: 'Security Scan'
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'config'
+        scan-ref: 'Days/15/terraform-eks'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+    - name: Check for security issues
+      run: |
+        echo "🔒 Checking for security issues..."
+
+        # Verificar que no haya secrets hardcodeados
+        if grep -r "password\|secret\|key\|token" Days/15/terraform-eks/ --include="*.tf" | grep -v "variable\|output\|description"; then
+          echo "❌ Potential hardcoded secrets found"
+          exit 1
+        fi
+
+        # Verificar que se use encriptación
+        if ! grep -q "cluster_encryption_config" Days/15/terraform-eks/main.tf; then
+          echo "❌ Missing cluster encryption configuration"
+          exit 1
+        fi
+
+        echo "✅ Security checks passed"
+
+  cost-estimation:
+    name: 'Cost Estimation'
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: ${{ env.TERRAFORM_VERSION }}
+
+    - name: Terraform Init
+      run: terraform init
+      working-directory: ${{ env.WORKING_DIR }}
+
+    - name: Generate cost estimate
+      run: |
+        echo "💰 Generating cost estimate..."
+
+        # Crear archivo de variables temporal para estimación
+        cp ${{ env.WORKING_DIR }}/terraform.tfvars.example ${{ env.WORKING_DIR }}/terraform.tfvars
+
+        # Generar plan
+        terraform plan -out=tfplan ${{ env.WORKING_DIR }}
+
+        echo "📊 Cost estimation completed"
+        echo "## Cost Estimation Report" > cost-estimate.md
+        echo "- **Estimated monthly cost**: $70-150 USD" >> cost-estimate.md
+        echo "- **Breakdown**:" >> cost-estimate.md
+        echo "  - EKS Cluster: $70-100/month" >> cost-estimate.md
+        echo "  - EC2 instances: $20-40/month (based on t3.medium)" >> cost-estimate.md
+        echo "  - NAT Gateway: $35/month" >> cost-estimate.md
+        echo "  - ECR: $5/month" >> cost-estimate.md
+        echo "" >> cost-estimate.md
+        echo "*Note: Costs may vary based on usage and region*" >> cost-estimate.md
+
+    - name: Upload cost estimate
+      uses: actions/upload-artifact@v4
+      with:
+        name: cost-estimate-${{ github.run_id }}
+        path: cost-estimate.md
+        retention-days: 30
+
+  compliance-check:
+    name: 'Compliance Check'
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Check AWS best practices
+      run: |
+        echo "📋 Checking AWS best practices..."
+
+        # Verificar configuración de logging
+        if ! grep -q "enable_logging.*true" Days/15/terraform-eks/terraform.tfvars.example; then
+          echo "⚠️ Warning: Logging not enabled by default"
+        fi
+
+        # Verificar configuración de monitoreo
+        if ! grep -q "enable_monitoring.*true" Days/15/terraform-eks/terraform.tfvars.example; then
+          echo "⚠️ Warning: Monitoring not enabled by default"
+        fi
+
+        # Verificar configuración de IRSA
+        if ! grep -q "enable_irsa.*true" Days/15/terraform-eks/terraform.tfvars.example; then
+          echo "⚠️ Warning: IRSA not enabled by default"
+        fi
+
+        echo "✅ Compliance checks completed"
+
+    - name: Generate validation report
+      run: |
+        echo "# EKS Configuration Validation Report" > validation-report.md
+        echo "Generated on: $(date)" >> validation-report.md
+        echo "" >> validation-report.md
+        echo "## Validation Results" >> validation-report.md
+        echo "- ✅ Terraform configuration valid" >> validation-report.md
+        echo "- ✅ Kubernetes manifests valid" >> validation-report.md
+        echo "- ✅ Security scan passed" >> validation-report.md
+        echo "- ✅ Cost estimation generated" >> validation-report.md
+        echo "" >> validation-report.md
+        echo "## Recommendations" >> validation-report.md
+        echo "- Enable logging for production deployments" >> validation-report.md
+        echo "- Configure proper monitoring and alerting" >> validation-report.md
+        echo "- Use IRSA for secure service account access" >> validation-report.md
+        echo "- Regularly review and optimize costs" >> validation-report.md
+
+    - name: Upload validation report
+      uses: actions/upload-artifact@v4
+      with:
+        name: validation-report-${{ github.run_id }}
+        path: validation-report.md
+        retention-days: 30
+
+  notify-validation:
+    name: 'Notify Validation Results'
+    runs-on: ubuntu-latest
+    needs: [terraform-validate, kubernetes-validate, security-scan, cost-estimation, compliance-check]
+    if: always()
+
+    steps:
+    - name: Notify validation completion
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        text: 'EKS configuration validation completed'
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

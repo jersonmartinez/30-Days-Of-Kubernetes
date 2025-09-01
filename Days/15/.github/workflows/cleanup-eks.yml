@@ -1,0 +1,210 @@
+name: Cleanup EKS Resources
+
+on:
+  schedule:
+    # Ejecutar todos los domingos a las 2 AM UTC
+    - cron: '0 2 * * 0'
+  workflow_dispatch:
+    inputs:
+      cleanup_type:
+        description: 'Type of cleanup to perform'
+        required: true
+        default: 'full'
+        type: choice
+        options:
+          - full
+          - partial
+          - dry-run
+      environment:
+        description: 'Environment to cleanup'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+
+env:
+  AWS_REGION: us-east-1
+  WORKING_DIR: Days/15/terraform-eks
+
+jobs:
+  cleanup:
+    name: 'Cleanup EKS Resources'
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'dev' }}
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Setup kubectl
+      if: github.event.inputs.cleanup_type != 'dry-run'
+      run: |
+        aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name ${{ secrets.EKS_CLUSTER_NAME }}
+
+    - name: Cleanup Kubernetes resources
+      if: github.event.inputs.cleanup_type != 'dry-run'
+      run: |
+        echo "🧹 Starting Kubernetes cleanup..."
+
+        # Eliminar pods fallidos
+        kubectl delete pods --field-selector=status.phase=Failed -A --ignore-not-found=true
+
+        # Eliminar jobs completados (mayores a 1 hora)
+        kubectl delete jobs --field-selector=status.successful=1 -A --ignore-not-found=true
+
+        # Limpiar PVCs huérfanos
+        kubectl delete pvc --field-selector=status.phase=Lost -A --ignore-not-found=true
+
+        # Limpiar configmaps y secrets no utilizados
+        kubectl delete configmap --field-selector=metadata.name!=kube-root-ca.crt -A --ignore-not-found=true
+        kubectl delete secret --field-selector=type!=kubernetes.io/service-account-token -A --ignore-not-found=true
+
+        # Limpiar eventos antiguos
+        kubectl delete events --field-selector=type!=Warning -A --ignore-not-found=true
+
+        echo "✅ Kubernetes cleanup completed"
+
+    - name: Cleanup ECR images
+      if: github.event.inputs.cleanup_type == 'full'
+      run: |
+        echo "🗑️ Starting ECR cleanup..."
+
+        # Obtener imágenes no utilizadas (excepto las últimas 10)
+        IMAGES_TO_DELETE=$(aws ecr list-images --repository-name ${{ secrets.ECR_REPOSITORY_NAME }} --query 'imageIds[10:].imageDigest' --output text)
+
+        if [ ! -z "$IMAGES_TO_DELETE" ]; then
+          echo "Deleting old images: $IMAGES_TO_DELETE"
+          aws ecr batch-delete-image --repository-name ${{ secrets.ECR_REPOSITORY_NAME }} --image-ids $IMAGES_TO_DELETE
+        else
+          echo "No old images to delete"
+        fi
+
+        echo "✅ ECR cleanup completed"
+
+    - name: Cleanup CloudWatch logs
+      if: github.event.inputs.cleanup_type == 'full'
+      run: |
+        echo "📊 Starting CloudWatch cleanup..."
+
+        # Eliminar log groups antiguos (retención > 30 días)
+        LOG_GROUPS=$(aws logs describe-log-groups --query 'logGroups[?retentionInDays>`30`].logGroupName' --output text)
+
+        for LOG_GROUP in $LOG_GROUPS; do
+          echo "Setting retention to 30 days for: $LOG_GROUP"
+          aws logs put-retention-policy --log-group-name $LOG_GROUP --retention-in-days 30
+        done
+
+        echo "✅ CloudWatch cleanup completed"
+
+    - name: Cleanup unused EBS volumes
+      if: github.event.inputs.cleanup_type == 'full'
+      run: |
+        echo "💾 Starting EBS cleanup..."
+
+        # Encontrar volúmenes disponibles
+        UNUSED_VOLUMES=$(aws ec2 describe-volumes --filters Name=status,Values=available --query 'Volumes[].VolumeId' --output text)
+
+        for VOLUME in $UNUSED_VOLUMES; do
+          echo "Deleting unused volume: $VOLUME"
+          aws ec2 delete-volume --volume-id $VOLUME
+        done
+
+        echo "✅ EBS cleanup completed"
+
+    - name: Generate cleanup report
+      run: |
+        echo "📋 Generating cleanup report..."
+
+        # Crear reporte de recursos actuales
+        echo "# EKS Cleanup Report" > cleanup-report.md
+        echo "Generated on: $(date)" >> cleanup-report.md
+        echo "" >> cleanup-report.md
+
+        echo "## Current Resources" >> cleanup-report.md
+        echo "### Nodes" >> cleanup-report.md
+        kubectl get nodes >> cleanup-report.md 2>/dev/null || echo "Unable to get nodes" >> cleanup-report.md
+        echo "" >> cleanup-report.md
+
+        echo "### Pods" >> cleanup-report.md
+        kubectl get pods -A --no-headers | wc -l >> cleanup-report.md 2>/dev/null || echo "Unable to get pods" >> cleanup-report.md
+        echo "" >> cleanup-report.md
+
+        echo "### ECR Images" >> cleanup-report.md
+        aws ecr describe-images --repository-name ${{ secrets.ECR_REPOSITORY_NAME }} --query 'length(imageDetails)' 2>/dev/null || echo "Unable to get ECR images" >> cleanup-report.md
+        echo "" >> cleanup-report.md
+
+        echo "### EBS Volumes" >> cleanup-report.md
+        aws ec2 describe-volumes --query 'length(Volumes[?State==`available`])' 2>/dev/null || echo "Unable to get EBS volumes" >> cleanup-report.md
+        echo "" >> cleanup-report.md
+
+        # Upload report as artifact
+        echo "Cleanup report generated"
+
+    - name: Upload cleanup report
+      uses: actions/upload-artifact@v4
+      with:
+        name: cleanup-report-${{ github.run_id }}
+        path: cleanup-report.md
+        retention-days: 30
+
+    - name: Notify cleanup completion
+      if: always()
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        text: 'Weekly cleanup of EKS resources has been completed'
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  cost-analysis:
+    name: 'Cost Analysis'
+    runs-on: ubuntu-latest
+    needs: cleanup
+    if: github.event.inputs.cleanup_type == 'full'
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ secrets.AWS_OIDC_ROLE_ARN }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Generate cost report
+      run: |
+        echo "💰 Generating cost analysis..."
+
+        # Obtener costos de los últimos 30 días
+        COST_DATA=$(aws ce get-cost-and-usage \
+          --time-period Start=$(date -d '30 days ago' +%Y-%m-%d),End=$(date +%Y-%m-%d) \
+          --granularity MONTHLY \
+          --metrics "BlendedCost" \
+          --group-by Type=DIMENSION,Key=SERVICE \
+          --query 'ResultsByTime[0].Groups[?Keys[0]!=\`AWS CloudTrail\` && Keys[0]!=\`Amazon Route 53\`]' \
+          --output json)
+
+        echo "Cost analysis completed"
+        echo "$COST_DATA" > cost-analysis.json
+
+    - name: Upload cost analysis
+      uses: actions/upload-artifact@v4
+      with:
+        name: cost-analysis-${{ github.run_id }}
+        path: cost-analysis.json
+        retention-days: 30

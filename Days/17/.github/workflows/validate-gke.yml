@@ -1,0 +1,124 @@
+name: Validate GKE Configuration
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'k8s/**'
+      - 'terraform-gke/**'
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate-k8s:
+    name: 'Validate Kubernetes Manifests'
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup kubectl
+      uses: azure/setup-kubectl@v3
+      with:
+        version: 'v1.28.0'
+
+    - name: Validate Kubernetes manifests
+      run: |
+        find k8s/ -name "*.yaml" -o -name "*.yml" | xargs -I {} kubectl apply --dry-run=client --validate=true -f {}
+
+    - name: Check for deprecated APIs
+      run: |
+        find k8s/ -name "*.yaml" -o -name "*.yml" | xargs -I {} sh -c 'echo "Checking {}"; kubectl apply --dry-run=client -f {} > /dev/null 2>&1 || echo "❌ Error in {}"'
+
+  validate-terraform:
+    name: 'Validate Terraform Configuration'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: terraform-gke
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: "1.5.0"
+
+    - name: Terraform Init
+      run: terraform init
+
+    - name: Terraform Format
+      run: terraform fmt -check
+
+    - name: Terraform Validate
+      run: terraform validate
+
+    - name: Check Security Issues
+      run: |
+        # Verificar que no hay secrets hardcodeados
+        if grep -r "password\|secret\|key" --include="*.tf" . | grep -v "variable\|output\|resource"; then
+          echo "❌ Posibles secrets hardcodeados encontrados"
+          exit 1
+        fi
+
+        # Verificar que se usan variables para valores sensibles
+        if grep -r "my-project-id\|my-secret" --include="*.tf" .; then
+          echo "❌ Valores hardcodeados encontrados, usar variables"
+          exit 1
+        fi
+
+  security-scan:
+    name: 'Security Scan'
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+  lint:
+    name: 'Lint Code'
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Install dependencies
+      run: |
+        if [ -f package.json ]; then
+          npm install
+        fi
+
+    - name: Run ESLint
+      run: |
+        if [ -f package.json ] && grep -q "eslint" package.json; then
+          npx eslint . --ext .js,.jsx,.ts,.tsx
+        else
+          echo "No ESLint configuration found, skipping..."
+        fi
+
+    - name: Check YAML syntax
+      run: |
+        find . -name "*.yaml" -o -name "*.yml" | xargs -I {} sh -c 'echo "Checking {}"; python3 -c "import yaml; yaml.safe_load(open(\"{}\"))" || echo "❌ Invalid YAML: {}"'

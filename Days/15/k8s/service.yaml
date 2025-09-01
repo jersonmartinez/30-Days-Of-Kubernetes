@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-app-service
+  namespace: default
+  labels:
+    app: my-app
+    environment: production
+  annotations:
+    # AWS Load Balancer Controller annotations
+    service.beta.kubernetes.io/aws-load-balancer-type: external
+    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
+    service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+    service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: 'true'
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-healthy-threshold: '2'
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-unhealthy-threshold: '2'
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-interval: '10'
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-timeout: '10'
+    # Security group annotations
+    service.beta.kubernetes.io/aws-load-balancer-security-groups: eks-cluster-sg
+    # SSL/TLS annotations
+    service.beta.kubernetes.io/aws-load-balancer-ssl-cert: arn:aws:acm:us-east-1:123456789012:certificate/12345678-1234-1234-1234-123456789012
+    service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "443"
+    # Additional annotations
+    service.beta.kubernetes.io/aws-load-balancer-additional-resource-tags: Environment=production,Project=30-Days-Of-Kubernetes
+spec:
+  type: LoadBalancer
+  selector:
+    app: my-app
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8080
+    protocol: TCP
+  - name: https
+    port: 443
+    targetPort: 8080
+    protocol: TCP
+  sessionAffinity: None
+  externalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack

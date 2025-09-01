@@ -1,0 +1,10 @@
+project_id      = "my-gcp-project"
+region          = "us-central1"
+zone            = "us-central1-a"
+cluster_name    = "my-gke-cluster"
+node_count      = 2
+machine_type    = "e2-medium"
+enable_autopilot = false
+kubernetes_version = "1.28.0"
+enable_network_policy = true
+enable_binary_authorization = false

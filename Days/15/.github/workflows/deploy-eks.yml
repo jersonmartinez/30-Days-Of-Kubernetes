@@ -1,0 +1,205 @@
+name: Deploy EKS Infrastructure
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'Days/15/terraform-eks/**'
+      - 'Days/15/k8s/**'
+      - '.github/workflows/deploy-eks.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'Days/15/terraform-eks/**'
+      - 'Days/15/k8s/**'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+
+env:
+  AWS_REGION: us-east-1
+  TERRAFORM_VERSION: 1.5.0
+  WORKING_DIR: Days/15/terraform-eks
+
+jobs:
+  terraform:
+    name: 'Terraform Plan/Apply'
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'dev' }}
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: ${{ env.TERRAFORM_VERSION }}
+
+    - name: Terraform Init
+      run: terraform init
+      working-directory: ${{ env.WORKING_DIR }}
+
+    - name: Terraform Format
+      run: terraform fmt -check
+      working-directory: ${{ env.WORKING_DIR }}
+
+    - name: Terraform Validate
+      run: terraform validate
+      working-directory: ${{ env.WORKING_DIR }}
+
+    - name: Terraform Plan
+      id: plan
+      run: |
+        terraform plan -no-color -out=tfplan
+      working-directory: ${{ env.WORKING_DIR }}
+      continue-on-error: true
+
+    - name: Update Pull Request
+      uses: actions/github-script@v7
+      if: github.event_name == 'pull_request'
+      env:
+        PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          const output = `#### Terraform Format and Validate 🖌\`${{ steps.fmt.outcome }}\`
+          #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
+
+          <details><summary>Show Plan</summary>
+
+          \`\`\`\n
+          ${process.env.PLAN}
+          \`\`\`
+
+          </details>
+
+          *Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
+
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: output
+          })
+
+    - name: Terraform Plan Status
+      if: steps.plan.outcome == 'failure'
+      run: exit 1
+
+    - name: Terraform Apply
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      run: terraform apply -auto-approve tfplan
+      working-directory: ${{ env.WORKING_DIR }}
+
+    - name: Configure kubectl
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      run: |
+        aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name $(terraform output -raw cluster_name)
+      working-directory: ${{ env.WORKING_DIR }}
+
+    - name: Verify cluster
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      run: |
+        kubectl get nodes
+        kubectl get pods -A
+
+  build-and-deploy:
+    name: 'Build and Deploy Application'
+    runs-on: ubuntu-latest
+    needs: terraform
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
+
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY_NAME }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=sha,prefix={{branch}}-
+          type=raw,value=latest,enable={{is_default_branch}}
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: Configure kubectl
+      run: |
+        aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name ${{ secrets.EKS_CLUSTER_NAME }}
+
+    - name: Deploy to Kubernetes
+      run: |
+        # Update deployment image
+        sed -i 's|{{ECR_REGISTRY}}|${{ steps.login-ecr.outputs.registry }}|g' Days/15/k8s/deployment.yaml
+        sed -i 's|{{ECR_REPOSITORY}}|${{ secrets.ECR_REPOSITORY_NAME }}|g' Days/15/k8s/deployment.yaml
+        sed -i 's|{{IMAGE_TAG}}|${{ github.sha }}|g' Days/15/k8s/deployment.yaml
+
+        # Apply Kubernetes manifests
+        kubectl apply -f Days/15/k8s/
+        kubectl rollout status deployment/my-app -n default --timeout=300s
+
+    - name: Run health checks
+      run: |
+        # Wait for service to be ready
+        kubectl wait --for=condition=available --timeout=300s deployment/my-app -n default
+
+        # Get service URL
+        SERVICE_URL=$(kubectl get svc my-app-service -n default -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+        echo "Application URL: http://$SERVICE_URL"
+
+        # Basic health check
+        curl -f http://$SERVICE_URL/health || echo "Health check failed"
+
+    - name: Notify deployment
+      if: always()
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
+        fields: repo,message,commit,author,action,eventName,ref,workflow
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

@@ -1,0 +1,10 @@
+resource_group_name = "my-aks-rg"
+location           = "East US"
+cluster_name       = "my-aks-cluster"
+kubernetes_version = "1.28.0"
+node_count         = 2
+vm_size            = "Standard_DS2_v2"
+enable_auto_scaling = true
+min_node_count     = 1
+max_node_count     = 5
+enable_monitoring  = true

@@ -1,0 +1,67 @@
+# Configuración básica del cluster EKS
+region            = "us-east-1"
+environment       = "dev"
+cluster_name      = "eks-cluster-dev"
+kubernetes_version = "1.28"
+
+# Configuración de VPC
+vpc_cidr        = "10.0.0.0/16"
+private_subnets = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
+public_subnets  = ["10.0.101.0/24", "10.0.102.0/24", "10.0.103.0/24"]
+
+# Configuración de node groups
+node_groups = {
+  general = {
+    instance_types = ["t3.medium"]
+    capacity_type  = "ON_DEMAND"
+    min_size       = 1
+    max_size       = 5
+    desired_size   = 2
+    disk_size      = 20
+  }
+  # Agregar más node groups si es necesario
+  # spot = {
+  #   instance_types = ["t3.medium", "t3.large"]
+  #   capacity_type  = "SPOT"
+  #   min_size       = 0
+  #   max_size       = 10
+  #   desired_size   = 0
+  #   disk_size      = 20
+  # }
+}
+
+# Configuración de monitoreo y logging
+enable_monitoring = true
+enable_logging    = true
+
+# Configuración de acceso
+enable_public_access = true
+public_access_cidrs  = ["0.0.0.0/0"]  # En producción, restringir a IPs específicas
+
+# Configuración de networking
+enable_nat_gateway   = true
+single_nat_gateway   = true
+enable_dns_hostnames = true
+enable_dns_support   = true
+
+# Configuración de ECR
+create_ecr_repository     = true
+ecr_repository_name       = "eks-app-repo"
+ecr_image_tag_mutability  = "MUTABLE"
+
+# Configuración de addons
+enable_aws_load_balancer_controller = true
+enable_ebs_csi_driver              = true
+enable_irsa                        = true
+
+# Tags adicionales
+tags = {
+  Owner       = "DevOps Team"
+  Project     = "30-Days-Of-Kubernetes"
+  CostCenter  = "Engineering"
+  Backup      = "Daily"
+}
+
+# Variables para CI/CD (opcionales)
+# web_identity_token_file = ""
+# role_arn = ""

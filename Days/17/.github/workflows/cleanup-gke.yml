@@ -1,0 +1,89 @@
+name: Cleanup GKE Resources
+
+on:
+  schedule:
+    # Ejecutar todos los domingos a las 2 AM UTC
+    - cron: '0 2 * * 0'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to cleanup'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+        - dev
+        - staging
+        - prod
+
+env:
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  CLUSTER_NAME: my-gke-cluster
+  REGION: us-central1
+  ZONE: us-central1-a
+
+jobs:
+  cleanup:
+    name: 'Cleanup GKE Resources'
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Configure GCP
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+    - name: Setup gcloud
+      uses: google-github-actions/setup-gcloud@v2
+
+    - name: Get GKE credentials
+      run: |
+        gcloud container clusters get-credentials $CLUSTER_NAME \
+          --zone $ZONE \
+          --project $PROJECT_ID
+
+    - name: Setup kubectl
+      uses: azure/setup-kubectl@v3
+      with:
+        version: 'v1.28.0'
+
+    - name: Cleanup Kubernetes resources
+      run: |
+        # Eliminar pods en estado Error o CrashLoopBackOff
+        kubectl delete pods --field-selector=status.phase=Failed
+        kubectl delete pods --field-selector=status.phase=Pending --force
+
+        # Eliminar jobs completados hace más de 1 hora
+        kubectl delete jobs --field-selector=status.successful=1 --older-than=1h
+
+        # Limpiar PVC no utilizados
+        kubectl delete pvc --field-selector=status.phase=Lost
+
+        # Limpiar configmaps huérfanos
+        kubectl delete configmap --all --namespace=default
+
+    - name: Cleanup GCP resources
+      run: |
+        # Eliminar discos no utilizados
+        for disk in $(gcloud compute disks list --filter="-users:*" --format="value(name)"); do
+          echo "Eliminando disco: $disk"
+          gcloud compute disks delete $disk --zone=$ZONE --quiet
+        done
+
+        # Eliminar snapshots antiguos
+        for snapshot in $(gcloud compute snapshots list --filter="creationTimestamp<-7d" --format="value(name)"); do
+          echo "Eliminando snapshot: $snapshot"
+          gcloud compute snapshots delete $snapshot --quiet
+        done
+
+    - name: Send notification
+      if: always()
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        text: "GKE Cleanup completed - ${{ job.status }}"
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
